@@ -69,6 +69,29 @@ export const ContactsView: React.FC = () => {
         }
     };
 
+    const callContact = async (contact: Contact) => {
+        const message = prompt("Enter message to speak:", "Be ready for tomorrow. Tomorrow is an important day.");
+        if (!message) return;
+
+        try {
+            toast("Initiating call...", "info");
+            const res = await fetch("http://localhost:8002/call_staff", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ phone: contact.phone, message })
+            });
+            const data = await res.json();
+            if (data.status === "success") {
+                toast("Call initiated successfully!", "success");
+            } else {
+                toast("Failed to initiate call: " + data.message, "error");
+            }
+        } catch (e) {
+            console.error("Failed to call contact", e);
+            toast("Failed to call contact", "error");
+        }
+    };
+
     // Group contacts by role
     const groupedContacts = {
         Ambulance: contacts.filter(c => c.role === "Ambulance"),
@@ -106,13 +129,22 @@ export const ContactsView: React.FC = () => {
                                         <div className="text-xs font-mono text-gray-600">{contact.phone}</div>
                                     </div>
                                 </div>
-                                <button
-                                    onClick={() => deleteContact(contact.id)}
-                                    className="text-gray-400 hover:text-red-600 p-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    title="Delete Contact"
-                                >
-                                    <i className="ph-bold ph-trash"></i>
-                                </button>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => callContact(contact)}
+                                        className="text-gray-400 hover:text-lime-600 p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        title="Call Contact"
+                                    >
+                                        <i className="ph-bold ph-phone-call"></i>
+                                    </button>
+                                    <button
+                                        onClick={() => deleteContact(contact.id)}
+                                        className="text-gray-400 hover:text-red-600 p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        title="Delete Contact"
+                                    >
+                                        <i className="ph-bold ph-trash"></i>
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -170,8 +202,8 @@ export const ContactsView: React.FC = () => {
                                             key={role}
                                             onClick={() => setNewRole(role)}
                                             className={`px-3 py-2 rounded-md text-xs font-bold border transition-all ${newRole === role
-                                                    ? "bg-lime-400 text-black border-lime-400"
-                                                    : "bg-transparent text-gray-400 border-gray-700 hover:border-gray-500"
+                                                ? "bg-lime-400 text-black border-lime-400"
+                                                : "bg-transparent text-gray-400 border-gray-700 hover:border-gray-500"
                                                 }`}
                                         >
                                             {role}
