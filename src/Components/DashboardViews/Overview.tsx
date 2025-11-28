@@ -4,6 +4,7 @@ import DepartmentCard from "../DepartmentCard";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { AgentStatus, AgentState } from "../AgentStatus";
+import { getSimulatedWeather, WeatherData } from "../../utils/weatherSimulator";
 
 type Staffing = "Optimal" | "Understaffed" | "Critical";
 
@@ -42,6 +43,7 @@ export const Overview: React.FC<OverviewProps> = ({
   hospitalName,
 }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [weather, setWeather] = useState<WeatherData>(getSimulatedWeather()); // Initial state
   const [forecastData, setForecastData] = useState<number[]>([
     40, 45, 55, 65, 95, 85, 60,
   ]);
@@ -74,6 +76,14 @@ export const Overview: React.FC<OverviewProps> = ({
     }
   }, [reasoningLog]);
 
+  // Update Weather every minute
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setWeather(getSimulatedWeather());
+    }, 60000); // Update weather every minute
+    return () => clearInterval(interval);
+  }, []);
+
   // Real-time Agent Logic: Poll Backend & Log Events
   useEffect(() => {
     if (!isAutonomous) {
@@ -97,6 +107,11 @@ export const Overview: React.FC<OverviewProps> = ({
         const er = departments.find(d => d.name.includes("Emergency"));
         const criticalDeps = departments.filter(d => d.staffing === "Critical");
 
+        // Log Environmental Context
+        if (Math.random() > 0.6) {
+          setReasoningLog(prev => [...prev.slice(-5), `> [ENV] Monitoring AQI: ${weather.aqi} (${weather.condition}) | Temp: ${weather.temp}°C`]);
+        }
+
         if (er && er.occupancy > 90) {
           setAgentState("CRITICAL");
           setAgentMessage(`CRITICAL: ER Load ${er.occupancy}%`);
@@ -114,7 +129,7 @@ export const Overview: React.FC<OverviewProps> = ({
         // 4. Random "Deep" Insight
         if (Math.random() > 0.7) {
           const insights = [
-            "Correlating AQI spikes with respiratory admissions...",
+            `Correlating AQI spikes (${weather.aqi}) with respiratory admissions...`,
             "Optimizing O2 supply chain logistics...",
             "Updating predictive surge models (v2.4)...",
             "Scanning for infectious disease clusters..."
@@ -136,7 +151,7 @@ export const Overview: React.FC<OverviewProps> = ({
     const interval = setInterval(runAgentCycle, 6000); // Every 6 seconds
 
     return () => clearInterval(interval);
-  }, [isAutonomous, departments]);
+  }, [isAutonomous, departments, weather]); // Added weather dependency
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -180,7 +195,7 @@ export const Overview: React.FC<OverviewProps> = ({
       try {
         // Log the prediction request
         if (isAutonomous) {
-          setReasoningLog(prev => [...prev.slice(-5), `> [NET] POST /predict (Payload: {aqi: 150, temp: 32})`]);
+          setReasoningLog(prev => [...prev.slice(-5), `> [NET] POST /predict (Payload: {aqi: ${weather.aqi}, temp: ${weather.temp}})`]);
         }
 
         const response = await fetch("http://localhost:8002/predict", {
@@ -188,9 +203,9 @@ export const Overview: React.FC<OverviewProps> = ({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             date: new Date().toISOString().split("T")[0],
-            aqi: 150,
-            temp: 32,
-            humidity: 70,
+            aqi: weather.aqi, // Use dynamic weather
+            temp: weather.temp, // Use dynamic weather
+            humidity: weather.humidity, // Use dynamic weather
             is_festival: 0,
           }),
         });
@@ -231,7 +246,7 @@ export const Overview: React.FC<OverviewProps> = ({
     // Poll predictions every 30s to keep data fresh
     const pollInterval = setInterval(updateDepartments, 30000);
     return () => clearInterval(pollInterval);
-  }, [isAutonomous]);
+  }, [isAutonomous, weather]); // Added weather dependency
 
   const erDept = departments.find((d) => d.name.includes("Emergency"));
   const erBaseTarget = 30;
