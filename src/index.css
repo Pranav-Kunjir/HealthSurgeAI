@@ -1,0 +1,12 @@
+@import "tailwindcss";
+:root {
+  --brand-black: #0b0b0b;
+  --brand-lime: #ccff00;
+  --brand-gray: #f3f4f6;
+  --brand-dark-green: #1a2e1a;
+}
+.element-with-overflow::-webkit-scrollbar {
+      display: none; /* Hides the scrollbar entirely */
+      /* or you can set height to 0 for horizontal scrollbars */
+      height: 0px; 
+    }

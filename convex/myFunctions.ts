@@ -1,0 +1,169 @@
+import { v } from "convex/values";
+import { query, mutation, action } from "./_generated/server";
+import { api } from "./_generated/api";
+import { getAuthUserId } from "@convex-dev/auth/server";
+
+// Create a minimal hospital record for the authenticated user.
+
+
+// Create a minimal patient record for the authenticated user
+export const createPatientUser = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    // Fetch authenticated user document
+    const user = await ctx.db.get(userId);
+    const email = user?.email ?? null;
+
+    // Check if patient already exists for this userId
+    const existing = await ctx.db
+      .query("patients")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .first();
+
+    if (existing) {
+      return existing; // Already exists → return it
+    }
+
+    // Create a new patient entry
+    const record: any = {
+      userId,
+      name: user?.name ?? email ?? null,
+      contact: email ?? null,
+      createdAt: Date.now(),
+    };
+
+    const patientId = await ctx.db.insert("patients", record);
+
+    return await ctx.db.get(patientId);
+  },
+});
+
+
+
+
+// Get the current authenticated user's details
+export const getUser = query({
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+    const user = await ctx.db.get(userId);
+    return user;
+  },
+});
+
+
+export const ensureHospitalForAuthenticatedUser = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    // Fetch authenticated user document
+    const user = await ctx.db.get(userId);
+    const email = user?.email;
+    if (!email) throw new Error("Authenticated user has no email stored");
+
+    // Check if hospital already exists with this email
+    const existing = await ctx.db
+      .query("hospitals")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .first();
+
+    if (existing) {
+      return existing; // Already exists → return it
+    }
+
+    // Create a new hospital entry
+    const hospitalId = await ctx.db.insert("hospitals", {
+      name: user.name || "Unnamed Hospital",
+      location: "Unknown",
+      email,
+      ownerId: userId,
+      createdAt: Date.now(),
+    });
+
+    return await ctx.db.get(hospitalId);
+  },
+  
+});
+
+
+
+export const getBedsForUser = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const user = await ctx.db.get(userId);
+    const email = user?.email;
+    if (!email) throw new Error("Authenticated user has no email");
+
+    // Return all beds with this emailId using the by_email index
+    const beds = await ctx.db
+      .query("hospitalBeds")
+      .withIndex("by_email", (q) => q.eq("emailId", email))
+      .collect();
+
+    // Convex returns documents — return them as-is.
+    return beds;
+  },
+});
+
+export const createBed = mutation({
+  args: {
+    bedType: v.string(),
+    bedNumber: v.number(),
+    bedStatus: v.string(),
+
+    // optional patient fields
+    hospitalName: v.optional(v.string()),
+    patientName: v.optional(v.string()),
+    patientAge: v.optional(v.number()),
+    patientAdmittedAt: v.optional(v.number()),
+    patientEstDischargeAt: v.optional(v.number()),
+    patientVitalBPM: v.optional(v.number()),
+    patientVitalSpO2: v.optional(v.number()),
+    patientBP: v.optional(v.string()),
+    pateintConditions: v.optional(v.string()),
+  },
+
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const user = await ctx.db.get(userId);
+    const email = user?.email;
+    if (!email) throw new Error("Authenticated user has no email stored");
+
+    // Basic required-field guards
+    if (!args.bedType) throw new Error("bedType required");
+    if (typeof args.bedNumber !== "number") throw new Error("bedNumber required");
+
+    // Build record but OMIT undefined fields (don't set fields to null)
+    const record: any = {
+      emailId: email,
+      bedType: args.bedType,
+      bedNumber: args.bedNumber,
+      bedStatus: args.bedStatus,
+      createdAt: Date.now(),
+    };
+
+    // Add optional fields only when they are defined (not null/undefined)
+    if (typeof args.hospitalName !== "undefined") record.hospitalName = args.hospitalName;
+    if (typeof args.patientName !== "undefined") record.patientName = args.patientName;
+    if (typeof args.patientAge !== "undefined") record.patientAge = args.patientAge;
+    if (typeof args.patientAdmittedAt !== "undefined") record.patientAdmittedAt = args.patientAdmittedAt;
+    if (typeof args.patientEstDischargeAt !== "undefined") record.patientEstDischargeAt = args.patientEstDischargeAt;
+    if (typeof args.patientVitalBPM !== "undefined") record.patientVitalBPM = args.patientVitalBPM;
+    if (typeof args.patientVitalSpO2 !== "undefined") record.patientVitalSpO2 = args.patientVitalSpO2;
+    if (typeof args.patientBP !== "undefined") record.patientBP = args.patientBP;
+    if (typeof args.pateintConditions !== "undefined") record.pateintConditions = args.pateintConditions;
+
+    const id = await ctx.db.insert("hospitalBeds", record);
+    return await ctx.db.get(id);
+  },
+});
