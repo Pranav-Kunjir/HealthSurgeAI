@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useToast } from "../Toaster";
 
 // Types
 type InventoryCategory = "Medical" | "Pharma" | "Surgical" | "General";
@@ -13,6 +14,8 @@ interface InventoryItem {
   unitPrice: number;
   supplier: string;
   lastRestocked: string;
+  consumptionPer100Patients: number; // % depletion per 100 patients
+  recommendedRestock?: number; // Calculated quantity to order
 }
 
 interface CatalogItem {
@@ -25,19 +28,20 @@ interface CatalogItem {
 }
 
 export const ResourcesView: React.FC = () => {
+  const { toast } = useToast();
   const [activeCategory, setActiveCategory] = useState<InventoryCategory | "All">("All");
   const [isProcurementOpen, setIsProcurementOpen] = useState(false);
   const [cart, setCart] = useState<{ [key: number]: number }>({}); // ItemID -> Quantity
 
   // Mock Inventory Data
   const [inventory, setInventory] = useState<InventoryItem[]>([
-    { id: 1, name: "Oxygen Cylinders", category: "Medical", level: 98, status: "Optimal", unitPrice: 150, supplier: "AirLiquide", lastRestocked: "2023-10-20" },
-    { id: 2, name: "PPE Kits", category: "General", level: 25, status: "Critical", unitPrice: 25, supplier: "SafetyFirst", lastRestocked: "2023-10-15" },
-    { id: 3, name: "IV Fluids (NS)", category: "Pharma", level: 82, status: "Good", unitPrice: 12, supplier: "PharmaCorp", lastRestocked: "2023-10-22" },
-    { id: 4, name: "Surgical Masks", category: "Surgical", level: 45, status: "Low", unitPrice: 0.5, supplier: "SafetyFirst", lastRestocked: "2023-10-18" },
-    { id: 5, name: "Paracetamol 500mg", category: "Pharma", level: 90, status: "Optimal", unitPrice: 2, supplier: "PharmaCorp", lastRestocked: "2023-10-21" },
-    { id: 6, name: "Syringes 5ml", category: "Surgical", level: 15, status: "Critical", unitPrice: 0.2, supplier: "MediEquip", lastRestocked: "2023-10-10" },
-    { id: 7, name: "Bandages", category: "General", level: 60, status: "Good", unitPrice: 5, supplier: "MediEquip", lastRestocked: "2023-10-19" },
+    { id: 1, name: "Oxygen Cylinders", category: "Medical", level: 98, status: "Optimal", unitPrice: 150, supplier: "AirLiquide", lastRestocked: "2023-10-20", consumptionPer100Patients: 5 },
+    { id: 2, name: "PPE Kits", category: "General", level: 25, status: "Critical", unitPrice: 25, supplier: "SafetyFirst", lastRestocked: "2023-10-15", consumptionPer100Patients: 15 },
+    { id: 3, name: "IV Fluids (NS)", category: "Pharma", level: 82, status: "Good", unitPrice: 12, supplier: "PharmaCorp", lastRestocked: "2023-10-22", consumptionPer100Patients: 8 },
+    { id: 4, name: "Surgical Masks", category: "Surgical", level: 45, status: "Low", unitPrice: 0.5, supplier: "SafetyFirst", lastRestocked: "2023-10-18", consumptionPer100Patients: 20 },
+    { id: 5, name: "Paracetamol 500mg", category: "Pharma", level: 90, status: "Optimal", unitPrice: 2, supplier: "PharmaCorp", lastRestocked: "2023-10-21", consumptionPer100Patients: 2 },
+    { id: 6, name: "Syringes 5ml", category: "Surgical", level: 15, status: "Critical", unitPrice: 0.2, supplier: "MediEquip", lastRestocked: "2023-10-10", consumptionPer100Patients: 12 },
+    { id: 7, name: "Bandages", category: "General", level: 60, status: "Good", unitPrice: 5, supplier: "MediEquip", lastRestocked: "2023-10-19", consumptionPer100Patients: 5 },
   ]);
 
   React.useEffect(() => {
@@ -58,18 +62,23 @@ export const ResourcesView: React.FC = () => {
         const predictedPatients = data.predicted_patients;
 
         // Simulate resource depletion: more patients = lower levels
-        // Base level is 100. Deduct 1% for every 10 patients (mock logic)
+        // Also calculate recommended restock if projected level drops below 30%
         setInventory(prev => prev.map(item => {
-          // Randomize depletion slightly per item to look natural
-          const depletion = Math.min(90, Math.round((predictedPatients / 20) * (0.5 + Math.random())));
-          const newLevel = Math.max(5, 100 - depletion);
+          // Mock logic: consumption based on patient count
+          const projectedDepletion = (predictedPatients / 100) * item.consumptionPer100Patients;
+          const projectedLevel = Math.max(0, item.level - projectedDepletion);
 
-          let newStatus: StockStatus = "Optimal";
-          if (newLevel < 20) newStatus = "Critical";
-          else if (newLevel < 40) newStatus = "Low";
-          else if (newLevel < 70) newStatus = "Good";
+          let recommendedQty = undefined;
+          // If projected level is critical (<30%), recommend restock
+          if (projectedLevel < 30) {
+            // Recommend enough to get back to 100% + buffer
+            recommendedQty = Math.ceil((100 - projectedLevel) * 10); // Arbitrary multiplier for units
+          }
 
-          return { ...item, level: newLevel, status: newStatus };
+          // Update status based on CURRENT level (visuals), but store recommendation
+          // We don't change current status based on prediction, only show the button
+
+          return { ...item, recommendedRestock: recommendedQty };
         }));
 
       } catch (error) {
@@ -97,10 +106,37 @@ export const ResourcesView: React.FC = () => {
     setTimeout(() => {
       setInventory((prev) =>
         prev.map((item) =>
-          item.id === id ? { ...item, status: "Optimal", level: 100 } : item
+          item.id === id ? { ...item, status: "Optimal", level: 100, recommendedRestock: undefined } : item
         )
       );
     }, 2000);
+  };
+
+  const handleDynamicRestock = async (item: InventoryItem) => {
+    if (!item.recommendedRestock) return;
+
+    try {
+      const response = await fetch('http://localhost:8002/send_restock_email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          item_name: item.name,
+          quantity: item.recommendedRestock,
+          vendor_email: "jjadhavshreyas84@gmail.com"
+        })
+      });
+      const data = await response.json();
+      if (data.status === "success") {
+        toast(`Restock request sent for ${item.name} (${item.recommendedRestock} units)`, "success");
+        // Mark as ordered
+        setInventory(prev => prev.map(i => i.id === item.id ? { ...i, status: "Ordered", recommendedRestock: undefined } : i));
+      } else {
+        toast(data.message || "Failed to send email", "error");
+      }
+    } catch (e) {
+      console.error(e);
+      toast("Failed to send restock request. Check backend connection.", "error");
+    }
   };
 
   const addToCart = (id: number) => {
@@ -197,12 +233,21 @@ export const ResourcesView: React.FC = () => {
                       </span>
                     </td>
                     <td className="p-4 text-right">
-                      {item.status !== "Ordered" && item.level < 100 && (
+                      {item.status !== "Ordered" && item.level < 100 && !item.recommendedRestock && (
                         <button
                           onClick={() => handleRestock(item.id)}
                           className="opacity-0 group-hover:opacity-100 transition-opacity text-xs bg-black text-white px-3 py-1 rounded font-bold hover:bg-lime-400 hover:text-black"
                         >
                           Restock
+                        </button>
+                      )}
+                      {item.status !== "Ordered" && item.recommendedRestock && (
+                        <button
+                          onClick={() => handleDynamicRestock(item)}
+                          className="flex items-center gap-1 text-xs bg-red-600 text-white px-3 py-1 rounded font-bold hover:bg-red-700 animate-pulse shadow-[2px_2px_0px_0px_#000]"
+                        >
+                          <i className="ph-bold ph-lightning"></i>
+                          Auto-Restock ({item.recommendedRestock})
                         </button>
                       )}
                       {item.status === "Ordered" && (

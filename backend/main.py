@@ -277,3 +277,48 @@ def get_historical():
         return []
     data = df.tail(100).to_dict(orient='records')
     return data
+
+class RestockEmailRequest(BaseModel):
+    item_name: str
+    quantity: int
+    vendor_email: str
+
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+@app.post("/send_restock_email")
+def send_restock_email(request: RestockEmailRequest):
+    email_user = os.getenv("EMAIL_USER")
+    email_password = os.getenv("EMAIL_PASSWORD")
+
+    if not email_user or not email_password:
+        print("Error: EMAIL_USER or EMAIL_PASSWORD not set in .env")
+        return {"status": "error", "message": "Backend email credentials not configured."}
+
+    try:
+        # SMTP Configuration for Gmail
+        smtp_server = "smtp.gmail.com"
+        smtp_port = 587
+
+        msg = MIMEMultipart()
+        msg['From'] = email_user
+        msg['To'] = request.vendor_email
+        msg['Subject'] = f"URGENT: Restock Request for {request.item_name}"
+
+        body = f"Please supply {request.quantity} units of {request.item_name} immediately to HealthSurge Hospital."
+        msg.attach(MIMEText(body, 'plain'))
+
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(email_user, email_password)
+        text = msg.as_string()
+        server.sendmail(email_user, request.vendor_email, text)
+        server.quit()
+
+        print(f"Email sent successfully to {request.vendor_email}")
+        return {"status": "success", "message": f"Email sent to {request.vendor_email}"}
+
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+        return {"status": "error", "message": str(e)}
