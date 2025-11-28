@@ -167,3 +167,71 @@ export const createBed = mutation({
     return await ctx.db.get(id);
   },
 });
+
+
+export const getHospitalsForUser = query({
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return []; // not authenticated -> empty list
+
+    const user = await ctx.db.get(userId);
+    const email = user?.email;
+    if (!email) return []; // no email stored
+
+    // Return all hospitals with this email (uses index "by_email" defined in schema)
+    const hospitals = await ctx.db
+      .query("hospitals")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .collect();
+
+    return hospitals;
+  },
+});
+
+
+export const updateHospital = mutation({
+  args: {
+    hospitalId: v.id("hospitals"),
+    patch: v.object({
+      name: v.optional(v.string()),
+      location: v.optional(v.string()),
+      email: v.optional(v.string()),
+      hospitalName: v.optional(v.string()),
+    }),
+  },
+  handler: async (ctx, { hospitalId, patch }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    // get authenticated user doc (to check email if needed)
+    const user = await ctx.db.get(userId);
+    const userEmail = user?.email ?? null;
+
+    const existing = await ctx.db.get(hospitalId);
+    if (!existing) throw new Error("Hospital not found");
+
+    // Debugging logs — remove in production
+    console.log("updateHospital: userId:", userId?.toString?.());
+    console.log("updateHospital: userId:", userId?.toString?.());
+console.log(
+  "updateHospital: existing.ownerId:",
+  existing.ownerId?.toString?.()
+);
+
+
+    // Allow update if ownerId matches OR user email matches hospital email
+    const ownerMatches =
+      !!existing.ownerId && existing.ownerId.toString() === userId.toString();
+
+    const emailMatches =
+      !!userEmail && !!existing.email && userEmail.toLowerCase() === existing.email.toLowerCase();
+
+    if (!ownerMatches && !emailMatches) {
+      throw new Error("Not authorized to update this hospital");
+    }
+
+    await ctx.db.patch(hospitalId, patch);
+    return await ctx.db.get(hospitalId);
+  },
+});
+

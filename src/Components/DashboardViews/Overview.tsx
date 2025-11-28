@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { StatCard } from "../StatCard";
 import DepartmentCard from "../DepartmentCard";
-
+import { useQuery } from "convex/react"; // <-- added
+import { api } from "../../../convex/_generated/api";
 type Staffing = "Optimal" | "Understaffed" | "Critical";
 
 interface Dept {
@@ -28,12 +29,33 @@ interface OverviewProps {
   onNavigate: (tab: string) => void;
   insight: string | null;
   actions?: string[];
+  hospitalName?: string; // <-- optional prop to allow parent override
 }
 
-export const Overview: React.FC<OverviewProps> = ({ alerts, onNavigate, insight, actions }) => {
+export const Overview: React.FC<OverviewProps> = ({
+  alerts,
+  onNavigate,
+  insight,
+  actions,
+  hospitalName,
+}) => {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [forecastData, setForecastData] = useState<number[]>([40, 45, 55, 65, 95, 85, 60]);
+  const [forecastData, setForecastData] = useState<number[]>([
+    40, 45, 55, 65, 95, 85, 60,
+  ]);
   const [departments, setDepartments] = useState<Dept[]>(INITIAL_DEPARTMENTS);
+
+  // Convex hook to fetch hospitals for the authenticated user.
+  // Returns an array of hospital documents or null while loading.
+  const hospitals = useQuery(api.myFunctions.getHospitalsForUser) as Array<{
+    name?: string;
+  }> | null;
+
+  // Decide which name to display:
+  const hospitalDisplayName =
+    hospitalName ??
+    (hospitals && hospitals.length > 0 && hospitals[0].name) ??
+    "Apollo Navi Mumbai";
 
   const criticalDeps = departments.filter((d) => d.staffing === "Critical");
   const nonCriticalDeps = departments.filter((d) => d.staffing !== "Critical");
@@ -50,7 +72,9 @@ export const Overview: React.FC<OverviewProps> = ({ alerts, onNavigate, insight,
         const data = await response.json();
 
         const raw = data.slice(-7).map((d: any) => {
-          const val = (d.Patients ?? d.patients ?? d.predicted_patients) as number;
+          const val = (d.Patients ??
+            d.patients ??
+            d.predicted_patients) as number;
           const num = Number(val);
           return Number.isFinite(num) && num >= 0 ? num : 0;
         });
@@ -128,7 +152,10 @@ export const Overview: React.FC<OverviewProps> = ({ alerts, onNavigate, insight,
   const erDept = departments.find((d) => d.name.includes("Emergency"));
   const erBaseTarget = 30;
   const erWaitMinutes = erDept
-    ? Math.min(120, Math.max(10, Math.round(20 + (erDept.occupancy - 60) * 0.7)))
+    ? Math.min(
+        120,
+        Math.max(10, Math.round(20 + (erDept.occupancy - 60) * 0.7)),
+      )
     : erBaseTarget;
   const erDelta = erWaitMinutes - erBaseTarget;
   const erTrendDirection: "up" | "down" | "neutral" =
@@ -155,7 +182,7 @@ export const Overview: React.FC<OverviewProps> = ({ alerts, onNavigate, insight,
             Hospital Command Center
           </div>
           <h1 className="text-3xl font-bold font-display leading-none">
-            Apollo Navi Mumbai
+            {hospitalDisplayName}
           </h1>
           <p className="text-xs text-gray-400 font-medium mt-1">
             Predicting Healthcare Surges, Powering Smarter Hospitals
@@ -224,18 +251,30 @@ export const Overview: React.FC<OverviewProps> = ({ alerts, onNavigate, insight,
 
       {/* Agentic Insight Panel */}
       {insight && (
-        <div className={`mb-6 p-6 rounded-xl border-2 border-black relative overflow-hidden animate-in fade-in slide-in-from-top-4 duration-700 shadow-[8px_8px_0px_0px_#bef264] bg-white text-black`}>
+        <div
+          className={`mb-6 p-6 rounded-xl border-2 border-black relative overflow-hidden animate-in fade-in slide-in-from-top-4 duration-700 shadow-[8px_8px_0px_0px_#bef264] bg-white text-black`}
+        >
           {/* Decorative Pattern */}
-          <div className={`absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 rounded-full blur-3xl ${actions && actions.length > 0 ? "bg-red-500/10" : "bg-lime-400/20"}`}></div>
+          <div
+            className={`absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 rounded-full blur-3xl ${actions && actions.length > 0 ? "bg-red-500/10" : "bg-lime-400/20"}`}
+          ></div>
 
           <div className="relative z-10 flex items-start gap-4">
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] ${actions && actions.length > 0 ? "bg-red-100 text-red-600" : "bg-black text-lime-400"}`}>
-              <i className={`text-xl ph-fill ${actions && actions.length > 0 ? "ph-siren animate-pulse" : "ph-sparkle"}`}></i>
+            <div
+              className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] ${actions && actions.length > 0 ? "bg-red-100 text-red-600" : "bg-black text-lime-400"}`}
+            >
+              <i
+                className={`text-xl ph-fill ${actions && actions.length > 0 ? "ph-siren animate-pulse" : "ph-sparkle"}`}
+              ></i>
             </div>
             <div className="flex-1">
               <h3 className="text-xl font-bold font-display mb-2 flex items-center gap-3">
-                {actions && actions.length > 0 ? "EMERGENCY ACTION PROTOCOL" : "AI Strategic Insight"}
-                <span className={`text-[10px] px-2 py-1 rounded border-2 border-black font-bold uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] ${actions && actions.length > 0 ? "bg-red-600 text-white" : "bg-lime-400 text-black"}`}>
+                {actions && actions.length > 0
+                  ? "EMERGENCY ACTION PROTOCOL"
+                  : "AI Strategic Insight"}
+                <span
+                  className={`text-[10px] px-2 py-1 rounded border-2 border-black font-bold uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] ${actions && actions.length > 0 ? "bg-red-600 text-white" : "bg-lime-400 text-black"}`}
+                >
                   {actions && actions.length > 0 ? "CRITICAL" : "BETA"}
                 </span>
               </h3>
@@ -251,7 +290,10 @@ export const Overview: React.FC<OverviewProps> = ({ alerts, onNavigate, insight,
                   </div>
                   <ul className="space-y-3 mb-5">
                     {actions.map((action, idx) => (
-                      <li key={idx} className="flex items-start gap-3 text-sm font-bold text-gray-800">
+                      <li
+                        key={idx}
+                        className="flex items-start gap-3 text-sm font-bold text-gray-800"
+                      >
                         <div className="w-5 h-5 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0 border border-red-200 mt-0.5">
                           <i className="ph-bold ph-check text-xs"></i>
                         </div>
@@ -261,19 +303,27 @@ export const Overview: React.FC<OverviewProps> = ({ alerts, onNavigate, insight,
                   </ul>
                   <div className="pt-4 border-t border-red-200 flex justify-between items-center">
                     <span className="text-xs font-bold text-red-800">
-                      Confidence: <span className="text-white bg-black px-2 py-1 rounded ml-1">High</span>
+                      Confidence:{" "}
+                      <span className="text-white bg-black px-2 py-1 rounded ml-1">
+                        High
+                      </span>
                     </span>
                     <button
                       onClick={async () => {
                         try {
-                          const res = await fetch("http://localhost:8002/execute_emergency", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ actions: actions })
-                          });
+                          const res = await fetch(
+                            "http://localhost:8002/execute_emergency",
+                            {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ actions: actions }),
+                            },
+                          );
                           const data = await res.json();
                           if (data.status === "success") {
-                            alert(`Emergency Protocols Executed! ${data.sent_count} SMS alerts sent.`);
+                            alert(
+                              `Emergency Protocols Executed! ${data.sent_count} SMS alerts sent.`,
+                            );
                           } else {
                             alert(`Execution Failed: ${data.message}`);
                           }
@@ -395,8 +445,9 @@ export const Overview: React.FC<OverviewProps> = ({ alerts, onNavigate, insight,
                     style={{ height: `${h}%` }}
                   >
                     <div
-                      className={`absolute bottom-0 w-full transition-all duration-1000 ${h > 80 ? "bg-red-500" : "bg-lime-400"
-                        }`}
+                      className={`absolute bottom-0 w-full transition-all duration-1000 ${
+                        h > 80 ? "bg-red-500" : "bg-lime-400"
+                      }`}
                       style={{ height: `${h * 0.8}%` }}
                     ></div>
                   </div>
@@ -461,16 +512,21 @@ export const Overview: React.FC<OverviewProps> = ({ alerts, onNavigate, insight,
             </div>
             <div className="divide-y divide-gray-100">
               {alerts.slice(0, 3).map((alert, i) => (
-                <div key={i} className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer ${alert.type === 'Critical' ? 'bg-red-50/50' : ''}`}>
+                <div
+                  key={i}
+                  className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer ${alert.type === "Critical" ? "bg-red-50/50" : ""}`}
+                >
                   <div className="flex justify-between items-start mb-1">
-                    <span className={`text-[10px] font-bold border px-1 rounded uppercase ${alert.type === 'Critical' ? 'text-red-600 border-red-200 bg-red-100' : 'text-orange-600 border-orange-200 bg-orange-100'}`}>
+                    <span
+                      className={`text-[10px] font-bold border px-1 rounded uppercase ${alert.type === "Critical" ? "text-red-600 border-red-200 bg-red-100" : "text-orange-600 border-orange-200 bg-orange-100"}`}
+                    >
                       {alert.type}
                     </span>
-                    <span className="text-[10px] text-gray-400">{alert.time}</span>
+                    <span className="text-[10px] text-gray-400">
+                      {alert.time}
+                    </span>
                   </div>
-                  <div className="text-sm font-bold mb-1">
-                    {alert.title}
-                  </div>
+                  <div className="text-sm font-bold mb-1">{alert.title}</div>
                   <div className="text-xs text-gray-600 leading-relaxed">
                     {alert.desc}
                   </div>
@@ -479,7 +535,7 @@ export const Overview: React.FC<OverviewProps> = ({ alerts, onNavigate, insight,
             </div>
             <div className="p-2 bg-gray-50 border-t border-gray-100 text-center">
               <button
-                onClick={() => onNavigate('alerts')}
+                onClick={() => onNavigate("alerts")}
                 className="text-xs font-bold text-gray-500 hover:text-black"
               >
                 View All Alerts
@@ -512,8 +568,9 @@ export const Overview: React.FC<OverviewProps> = ({ alerts, onNavigate, insight,
                     <td className="py-2 font-bold font-mono">{p.id}</td>
                     <td className="py-2">
                       <span
-                        className={`w-2 h-2 rounded-full inline-block mr-1 ${p.triage === "Red" ? "bg-red-500" : "bg-yellow-400"
-                          }`}
+                        className={`w-2 h-2 rounded-full inline-block mr-1 ${
+                          p.triage === "Red" ? "bg-red-500" : "bg-yellow-400"
+                        }`}
                       ></span>
                       {p.triage}
                     </td>
