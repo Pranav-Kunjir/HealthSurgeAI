@@ -19,6 +19,7 @@ export default defineSchema({
     userId: v.id("users"),
     name: v.optional(v.string()),
     contact: v.optional(v.string()),
+    location: v.optional(v.string()),
     createdAt: v.number(),
   }).index("by_user", ["userId"]),
   hospitalBeds: defineTable({

@@ -1,5 +1,8 @@
+// src/Pages/Hospitals.tsx
 import React, { useState, useRef, useEffect } from "react";
 import "../index.css";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api"; // adjust path if needed
 
 interface Hospital {
   id: string;
@@ -14,7 +17,16 @@ interface Hospital {
   waitTime: number;
 }
 
-// Mock data for nearby hospitals
+interface PatientDoc {
+  _id?: string;
+  userId?: any;
+  name?: string;
+  contact?: string;
+  location?: string;
+  createdAt?: number;
+}
+
+/* ---------- MOCK HOSPITALS (kept for fallback / visual completeness) ---------- */
 const MOCK_HOSPITALS: Hospital[] = [
   {
     id: "1",
@@ -90,6 +102,7 @@ const MOCK_HOSPITALS: Hospital[] = [
   },
 ];
 
+/* ---------- HospitalCard component (unchanged visual) ---------- */
 interface HospitalCardProps {
   hospital: Hospital;
   isSelected: boolean;
@@ -145,6 +158,7 @@ const HospitalCard: React.FC<HospitalCardProps> = ({
             </span>
           </div>
         </div>
+
         <div className="flex gap-3 mb-3 text-xs">
           <div className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded border border-gray-100">
             <i className="ph-bold ph-map-pin text-red-500"></i>
@@ -291,6 +305,7 @@ const HospitalCard: React.FC<HospitalCardProps> = ({
   );
 };
 
+/* ---------- HospitalDetailsModal (full UI preserved) ---------- */
 interface BedTypeInfo {
   type: string;
   available: number;
@@ -393,7 +408,9 @@ const HospitalDetailsModal: React.FC<HospitalDetailsModalProps> = ({
 
   const handleConfirmBooking = () => {
     alert(
-      `Booking confirmed!\nBed: ${selectedBedType || "N/A"}\nAmbulance: ${selectedAmbulance || "Not selected"}`,
+      `Booking confirmed!\nBed: ${selectedBedType || "N/A"}\nAmbulance: ${
+        selectedAmbulance || "Not selected"
+      }`,
     );
     onClose();
   };
@@ -432,10 +449,16 @@ const HospitalDetailsModal: React.FC<HospitalDetailsModalProps> = ({
         {/* Progress Steps */}
         <div className="bg-gray-50 border-b-2 border-black px-6 py-4 flex items-center gap-4 shrink-0">
           <div
-            className={`flex items-center gap-2 ${bookingStep === "service" ? "text-black" : "text-gray-400"}`}
+            className={`flex items-center gap-2 ${
+              bookingStep === "service" ? "text-black" : "text-gray-400"
+            }`}
           >
             <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center font-bold border-2 ${bookingStep === "service" ? "bg-lime-400 border-black" : "bg-gray-200 border-gray-300"}`}
+              className={`w-8 h-8 rounded-full flex items-center justify-center font-bold border-2 ${
+                bookingStep === "service"
+                  ? "bg-lime-400 border-black"
+                  : "bg-gray-200 border-gray-300"
+              }`}
             >
               1
             </div>
@@ -443,10 +466,16 @@ const HospitalDetailsModal: React.FC<HospitalDetailsModalProps> = ({
           </div>
           <div className="h-0.5 w-12 bg-gray-300"></div>
           <div
-            className={`flex items-center gap-2 ${bookingStep === "confirm" ? "text-black" : "text-gray-400"}`}
+            className={`flex items-center gap-2 ${
+              bookingStep === "confirm" ? "text-black" : "text-gray-400"
+            }`}
           >
             <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center font-bold border-2 ${bookingStep === "confirm" ? "bg-lime-400 border-black" : "bg-gray-200 border-gray-300"}`}
+              className={`w-8 h-8 rounded-full flex items-center justify-center font-bold border-2 ${
+                bookingStep === "confirm"
+                  ? "bg-lime-400 border-black"
+                  : "bg-gray-200 border-gray-300"
+              }`}
             >
               2
             </div>
@@ -487,10 +516,18 @@ const HospitalDetailsModal: React.FC<HospitalDetailsModalProps> = ({
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex items-center gap-3">
                           <div
-                            className={`w-10 h-10 rounded-lg flex items-center justify-center ${selectedBedType === bed.type ? "bg-lime-200" : "bg-blue-50"}`}
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                              selectedBedType === bed.type
+                                ? "bg-lime-200"
+                                : "bg-blue-50"
+                            }`}
                           >
                             <i
-                              className={`ph-fill ${bed.icon} text-2xl ${selectedBedType === bed.type ? "text-black" : "text-blue-600"}`}
+                              className={`ph-fill ${bed.icon} text-2xl ${
+                                selectedBedType === bed.type
+                                  ? "text-black"
+                                  : "text-blue-600"
+                              }`}
                             ></i>
                           </div>
                           <div>
@@ -554,10 +591,18 @@ const HospitalDetailsModal: React.FC<HospitalDetailsModalProps> = ({
                       )}
                       <div className="flex items-center gap-3 mb-3">
                         <div
-                          className={`w-10 h-10 rounded-lg flex items-center justify-center ${selectedAmbulance === ambulance.type ? "bg-lime-200" : "bg-red-50"}`}
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                            selectedAmbulance === ambulance.type
+                              ? "bg-lime-200"
+                              : "bg-red-50"
+                          }`}
                         >
                           <i
-                            className={`ph-fill ${ambulance.icon} text-2xl ${selectedAmbulance === ambulance.type ? "text-black" : "text-red-600"}`}
+                            className={`ph-fill ${ambulance.icon} text-2xl ${
+                              selectedAmbulance === ambulance.type
+                                ? "text-black"
+                                : "text-red-600"
+                            }`}
                           ></i>
                         </div>
                         <div>
@@ -737,16 +782,161 @@ const HospitalDetailsModal: React.FC<HospitalDetailsModalProps> = ({
   );
 };
 
+/* ---------- PatientProfileModal (uses updatePatientForUser) ---------- */
+interface PatientProfileModalProps {
+  open: boolean;
+  onClose: () => void;
+  initialPatient?: PatientDoc | null;
+  onSaved?: (patient: PatientDoc) => void;
+}
+
+const PatientProfileModal: React.FC<PatientProfileModalProps> = ({
+  open,
+  onClose,
+  initialPatient,
+  onSaved,
+}) => {
+  const updatePatientForUser = useMutation(
+    api.myFunctions.updatePatientForUser,
+  ) as unknown as (args: { patch: Record<string, any> }) => Promise<PatientDoc>;
+  const [name, setName] = useState("");
+  const [contact, setContact] = useState("");
+  const [location, setLocation] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (open && initialPatient) {
+      setName(initialPatient.name ?? "");
+      setContact(initialPatient.contact ?? "");
+      setLocation(initialPatient.location ?? "");
+    } else if (open) {
+      setName("");
+      setContact("");
+      setLocation("");
+    }
+  }, [open, initialPatient]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const patch: Record<string, any> = {};
+      if (name !== "") patch.name = name;
+      if (contact !== "") patch.contact = contact;
+      if (location !== "") patch.location = location;
+
+      const updated = await updatePatientForUser({ patch });
+      setSaving(false);
+      onSaved && onSaved(updated);
+      alert("Profile saved successfully");
+      onClose();
+    } catch (err: any) {
+      setSaving(false);
+      console.error("Failed to save patient:", err);
+      alert("Failed to save profile: " + (err?.message || err));
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-999 flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
+      <div className="bg-white border-2 border-black shadow-[12px_12px_0px_0px_#bef264] w-full max-w-xl rounded-xl overflow-hidden">
+        <div className="bg-black text-white p-6 flex justify-between items-start">
+          <div>
+            <h2 className="text-2xl font-bold">Edit Patient Profile</h2>
+            <p className="text-gray-300 text-sm mt-1">
+              Update your name, contact and location.
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition-all"
+          >
+            <i className="ph-bold ph-x text-xl"></i>
+          </button>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="text-sm font-bold">Full name</label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full mt-2 p-3 border-2 border-gray-200 rounded focus:border-black"
+              placeholder="Your full name"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-bold">Contact (email / phone)</label>
+            <input
+              value={contact}
+              onChange={(e) => setContact(e.target.value)}
+              className="w-full mt-2 p-3 border-2 border-gray-200 rounded focus:border-black"
+              placeholder="Email or phone number"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-bold">Location</label>
+            <input
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              className="w-full mt-2 p-3 border-2 border-gray-200 rounded focus:border-black"
+              placeholder="City, area or address"
+            />
+          </div>
+        </div>
+
+        <div className="p-6 border-t-2 border-black bg-gray-50 flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-6 py-3 border-2 border-black font-bold rounded hover:bg-white transition-all"
+            disabled={saving}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            className="px-6 py-3 bg-lime-400 text-black border-2 border-black font-bold rounded shadow-[4px_4px_0px_0px_#111]"
+            disabled={saving}
+          >
+            {saving ? "Saving..." : "Save Profile"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ---------- Main Hospitals component (final) ---------- */
 const Hospitals: React.FC = () => {
   const [selectedHospital, setSelectedHospital] = useState<string | null>(null);
   const [detailModalHospital, setDetailModalHospital] =
     useState<Hospital | null>(null);
-  const [hospitals] = useState<Hospital[]>(MOCK_HOSPITALS);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(1400);
   const [positions, setPositions] = useState<
     Record<string, React.CSSProperties>
   >({});
+
+  // Convex queries/mutations
+  const createPatientUser = useMutation(
+    api.myFunctions.createPatientUser,
+  ) as unknown as () => Promise<PatientDoc | null>;
+  const getHospitalsForUserQuery = useQuery(
+    api.myFunctions.getHospitalsForUser,
+  ) as any[] | null;
+  const getUserQuery = useQuery(api.myFunctions.getUser) as any | null;
+
+  const [patient, setPatient] = useState<PatientDoc | null>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+
+  // Derived container math
+  const containerHeight = 900;
+  const centerX = containerWidth / 2;
+  const centerY = containerHeight / 2;
 
   useEffect(() => {
     const measureContainer = () => {
@@ -759,106 +949,193 @@ const Hospitals: React.FC = () => {
     return () => window.removeEventListener("resize", measureContainer);
   }, []);
 
-  // Container dimensions
-  const containerHeight = 900;
-  const centerX = containerWidth / 2;
-  const centerY = containerHeight / 2;
+  // Ensure patient exists and fetch it on mount (createPatientUser returns existing when present)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const p = await createPatientUser();
+        if (!cancelled) setPatient(p ?? null);
+      } catch (err) {
+        console.error("Failed to ensure patient on mount:", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [createPatientUser]);
 
-  // Generate positions based on distance - closer hospitals are nearer to center
+  // Convert DB hospitals into UI Hospital objects (fill missing fields)
+  const dbHospitals = getHospitalsForUserQuery ?? [];
+
+  const mapDbToHospital = (db: any, idx: number): Hospital => {
+    const id = db._id ?? db.email ?? `db-${idx}`;
+    const name = db.name ?? db.hospitalName ?? "Unnamed Hospital";
+    const address = db.location ?? "Unknown";
+
+    const distance =
+      typeof db.distance === "number"
+        ? db.distance
+        : Number((Math.random() * 4 + 0.5).toFixed(1));
+    const beds =
+      typeof db.beds === "number"
+        ? db.beds
+        : Math.floor(Math.random() * 300) + 150;
+    const occupancy =
+      typeof db.occupancy === "number"
+        ? db.occupancy
+        : Math.floor(Math.random() * 40) + 50; // 50-90
+    const rating =
+      typeof db.rating === "number"
+        ? db.rating
+        : Number((Math.random() * 0.9 + 4.0).toFixed(1));
+    const specializations =
+      Array.isArray(db.specializations) && db.specializations.length > 0
+        ? db.specializations
+        : ["General", "Emergency", "Outpatient"];
+    const emergencyRating: Hospital["emergencyRating"] =
+      (db.emergencyRating as any) ??
+      (occupancy > 80 ? "high" : occupancy > 65 ? "medium" : "low");
+    const waitTime =
+      typeof db.waitTime === "number"
+        ? db.waitTime
+        : Math.floor(Math.random() * 30) + 10;
+
+    return {
+      id: String(id),
+      name,
+      distance,
+      beds,
+      occupancy,
+      rating,
+      address,
+      specializations,
+      emergencyRating,
+      waitTime,
+    };
+  };
+
+  // Build hospitalsToRender:
+  const allDbHospitals: Hospital[] = dbHospitals.map(mapDbToHospital);
+
+  // Merge DB + MOCK (avoid duplicates)
+  const mergedHospitalsMap = new Map<string, Hospital>();
+  allDbHospitals.forEach((h) => {
+    mergedHospitalsMap.set(`${h.name}::${h.address}`, h);
+  });
+  MOCK_HOSPITALS.forEach((m) => {
+    const key = `${m.name}::${m.address}`;
+    if (!mergedHospitalsMap.has(key)) mergedHospitalsMap.set(key, m);
+  });
+  const combinedHospitals = Array.from(mergedHospitalsMap.values());
+
+  // Show only DB hospitals matching patient.location when present; otherwise DB+MOCK fallback
+  let hospitalsToRender: Hospital[];
+  if (patient?.location) {
+    const ploc = patient.location.trim().toLowerCase();
+    hospitalsToRender = allDbHospitals.filter(
+      (h) =>
+        (h.address ?? "").toLowerCase().includes(ploc) ||
+        (h.name ?? "").toLowerCase().includes(ploc) ||
+        (h.address ?? "").toLowerCase() === ploc,
+    );
+
+    // If nothing matched, fall back to DB hospitals (so page isn't empty)
+    if (hospitalsToRender.length === 0) {
+      hospitalsToRender = allDbHospitals;
+    }
+  } else {
+    hospitalsToRender =
+      combinedHospitals.length > 0 ? combinedHospitals : MOCK_HOSPITALS;
+  }
+
+  if (!hospitalsToRender || hospitalsToRender.length === 0)
+    hospitalsToRender = MOCK_HOSPITALS;
+
+  // Generate positions when hospitalsToRender changes
   useEffect(() => {
     const generatePositions = (): Record<string, React.CSSProperties> => {
       const positions: Record<string, React.CSSProperties> = {};
-
-      // Calculate max distance for scaling
-      const maxDistance = Math.max(...hospitals.map((h) => h.distance));
-      // Scale factor: closer hospitals (smaller distance) should be closer to center
-      const radiusScale = 150; // Base radius for positioning
-
-      hospitals.forEach((hospital, idx) => {
-        // Distribute hospitals evenly around a circle
-        const angle = (idx / hospitals.length) * Math.PI * 2;
-
-        // Distance-based radius: shorter distance = closer to center
-        const distanceRatio = hospital.distance / maxDistance;
-        const radius = radiusScale + distanceRatio * 250; // 150-400px radius
-
-        // Calculate position on circle
+      const maxDistance = Math.max(...hospitalsToRender.map((h) => h.distance));
+      const radiusScale = 150;
+      hospitalsToRender.forEach((hospital, idx) => {
+        const angle = (idx / hospitalsToRender.length) * Math.PI * 2;
+        const distanceRatio = hospital.distance / Math.max(1, maxDistance);
+        const radius = radiusScale + distanceRatio * 250;
         const x = centerX + Math.cos(angle) * radius;
         const y = centerY + Math.sin(angle) * radius;
-
-        // Card dimensions used for positioning/clamping
-        const rectWidth = 320; // w-80
-        const rectHeight = 160; // compact card approx height
+        const rectWidth = 320;
+        const rectHeight = 160;
         const halfW = rectWidth / 2;
         const halfH = rectHeight / 2;
-
-        // Centered left/top before clamping
         let left = x - halfW;
         let top = y - halfH;
-
-        // Clamp to keep cards inside the floating area
         left = Math.max(0, Math.min(left, containerWidth - rectWidth));
         top = Math.max(0, Math.min(top, containerHeight - rectHeight));
-
         positions[hospital.id] = {
           position: "absolute" as const,
           left: `${left}px`,
           top: `${top}px`,
         };
       });
-
       return positions;
     };
 
     setPositions(generatePositions());
-  }, [containerWidth, hospitals, centerX, centerY]);
+  }, [containerWidth, hospitalsToRender, centerX, centerY]);
 
-  // Drag state: track which card is being dragged and its offset
+  /* ---------- Drag state (window-level handlers for smooth dragging) ---------- */
   const [draggedCard, setDraggedCard] = useState<string | null>(null);
   const [offsets, setOffsets] = useState<
     Record<string, { x: number; y: number }>
   >({});
   const dragStartPos = useRef<{ x: number; y: number } | null>(null);
+  const dragStartOffsets = useRef<{ x: number; y: number } | null>(null);
+  const movementLimit = window.innerHeight * 0.25;
+  const clampOffset = (offset: number) =>
+    Math.max(-movementLimit, Math.min(movementLimit, offset));
 
-  // Movement limit: 10vh in each direction
-  const movementLimit = window.innerHeight * 0.1;
+  useEffect(() => {
+    const handleWindowMouseMove = (e: MouseEvent) => {
+      if (!draggedCard || !dragStartPos.current) return;
+      const deltaX = e.clientX - dragStartPos.current.x;
+      const deltaY = e.clientY - dragStartPos.current.y;
+      const base = dragStartOffsets.current ?? { x: 0, y: 0 };
+      setOffsets((prev) => ({
+        ...prev,
+        [draggedCard]: {
+          x: clampOffset(base.x + deltaX),
+          y: clampOffset(base.y + deltaY),
+        },
+      }));
+    };
 
-  // Clamp offset to movement limit
-  const clampOffset = (offset: number) => {
-    return Math.max(-movementLimit, Math.min(movementLimit, offset));
-  };
+    const handleWindowMouseUp = () => {
+      if (draggedCard) {
+        setDraggedCard(null);
+        dragStartPos.current = null;
+        dragStartOffsets.current = null;
+      }
+    };
+
+    window.addEventListener("mousemove", handleWindowMouseMove);
+    window.addEventListener("mouseup", handleWindowMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleWindowMouseMove);
+      window.removeEventListener("mouseup", handleWindowMouseUp);
+    };
+  }, [draggedCard]);
 
   const handleMouseDown = (e: React.MouseEvent, hospitalId: string) => {
+    e.preventDefault();
     setDraggedCard(hospitalId);
     dragStartPos.current = { x: e.clientX, y: e.clientY };
+    dragStartOffsets.current = offsets[hospitalId] ?? { x: 0, y: 0 };
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!draggedCard || !dragStartPos.current) return;
-
-    const deltaX = e.clientX - dragStartPos.current.x;
-    const deltaY = e.clientY - dragStartPos.current.y;
-
-    setOffsets((prev) => ({
-      ...prev,
-      [draggedCard]: {
-        x: clampOffset(deltaX),
-        y: clampOffset(deltaY),
-      },
-    }));
-  };
-
-  const handleMouseUp = () => {
-    setDraggedCard(null);
-    dragStartPos.current = null;
-  };
-
-  // Sphere measurement: measure the rendered "YOU" circle so SVG
-  // connections start exactly at its visible edge. This allows the
-  // sphere size to be changed via CSS/classes and keeps lines correct.
+  /* ---------- Sphere measurement ---------- */
   const sphereRef = useRef<HTMLDivElement | null>(null);
   const [sphereRadius, setSphereRadius] = useState<number>(64);
-
   useEffect(() => {
     const measure = () => {
       if (sphereRef.current) {
@@ -867,15 +1144,33 @@ const Hospitals: React.FC = () => {
         setSphereRadius(r);
       }
     };
-
     measure();
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
   }, []);
 
+  /* ---------- Patient profile flow (open editor) ---------- */
+  const openProfileEditor = async () => {
+    setLoadingProfile(true);
+    try {
+      const p = await createPatientUser();
+      setPatient(p ?? null);
+      setProfileOpen(true);
+    } catch (err: any) {
+      console.error("Failed to open profile editor", err);
+      alert("Could not load profile: " + ((err as any)?.message || err));
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
+  const handleProfileSaved = (updated: PatientDoc) => {
+    setPatient(updated);
+  };
+
+  /* ---------- Render ---------- */
   return (
     <div className="antialiased text-black font-sans bg-white">
-      {/* Custom Styles */}
       <style>{`
         @keyframes float {
           0% { transform: translateY(0px); }
@@ -933,44 +1228,69 @@ const Hospitals: React.FC = () => {
         }
       `}</style>
 
-      {/* Navbar removed - handled by UserLayout */}
-
-      {/* Header Section */}
+      {/* Header */}
       <div className="border-b-2 border-black p-10 bg-linear-to-r from-white via-lime-50 to-white relative overflow-hidden">
         <div className="absolute top-0 right-0 p-10 opacity-10">
           <i className="ph-fill ph-hospital text-9xl"></i>
         </div>
-        <div className="max-w-6xl mx-auto relative z-10">
-          <h2 className="text-5xl font-bold font-display mb-4 tracking-tight">
-            Find Your Nearest{" "}
-            <span className="text-lime-600 underline decoration-4 decoration-black">
-              Care Center
-            </span>
-          </h2>
-          <p className="text-gray-600 text-xl max-w-2xl mb-8 font-medium">
-            Real-time availability, instant booking, and emergency response. We
-            connect you to the best healthcare facilities in seconds.
-          </p>
-          <div className="flex gap-4">
-            <button className="bg-black text-white px-8 py-3 font-bold border-2 border-black shadow-[6px_6px_0px_0px_#bef264] hover:translate-y-1 hover:shadow-none transition-all rounded-lg flex items-center gap-2">
-              <i className="ph-fill ph-navigation-arrow"></i> Use Current
-              Location
-            </button>
-            <button className="bg-white text-black px-8 py-3 font-bold border-2 border-black shadow-[6px_6px_0px_0px_#ddd] hover:translate-y-1 hover:shadow-none transition-all rounded-lg flex items-center gap-2">
-              <i className="ph-fill ph-map-trifold"></i> View on Map
-            </button>
+        <div className="max-w-6xl mx-auto relative z-10 flex items-start justify-between">
+          <div>
+            <h2 className="text-5xl font-bold font-display mb-4 tracking-tight">
+              Find Your Nearest{" "}
+              <span className="text-lime-600 underline decoration-4 decoration-black">
+                Care Center
+              </span>
+            </h2>
+            <p className="text-gray-600 text-xl max-w-2xl mb-8 font-medium">
+              Real-time availability, instant booking, and emergency response.
+              We connect you to the best healthcare facilities in seconds.
+            </p>
+            <div className="flex gap-4">
+              <button className="bg-black text-white px-8 py-3 font-bold border-2 border-black shadow-[6px_6px_0px_0px_#bef264] hover:translate-y-1 hover:shadow-none transition-all rounded-lg flex items-center gap-2">
+                <i className="ph-fill ph-navigation-arrow"></i> Use Current
+                Location
+              </button>
+              <button className="bg-white text-black px-8 py-3 font-bold border-2 border-black shadow-[6px_6px_0px_0px_#ddd] hover:translate-y-1 hover:shadow-none transition-all rounded-lg flex items-center gap-2">
+                <i className="ph-fill ph-map-trifold"></i> View on Map
+              </button>
+            </div>
+          </div>
+
+          {/* Profile / edit button area */}
+          <div className="flex flex-col items-end gap-3">
+            <div className="text-right">
+              <div className="text-xs text-gray-500">Signed in as</div>
+              <div className="font-bold text-lg">
+                {getUserQuery?.name ?? getUserQuery?.email ?? "You"}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={openProfileEditor}
+                className="bg-lime-600 text-black px-4 py-2 font-bold border-2 border-black rounded shadow-[4px_4px_0px_0px_#111] hover:translate-y-1 transition-all disabled:opacity-60"
+                disabled={loadingProfile}
+              >
+                {loadingProfile ? "Loading..." : "Edit Profile"}
+              </button>
+              <button
+                className="bg-white text-black px-4 py-2 font-bold border-2 border-black rounded shadow-[4px_4px_0px_0px_#ddd] hover:translate-y-1 transition-all"
+                onClick={() => alert("View your bookings (stub)")}
+              >
+                My Bookings
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content - Floating Cards Area */}
+      {/* Main content (floating area) */}
       <div className="p-8 flex justify-center bg-gray-100">
         <div
           ref={containerRef}
           className="relative bg-white border-2 border-black rounded-2xl shadow-2xl w-full max-w-[1400px]"
           style={{ height: "900px" }}
         >
-          {/* Grid Pattern Background */}
+          {/* grid background */}
           <div
             className="absolute inset-0 opacity-10"
             style={{
@@ -980,9 +1300,8 @@ const Hospitals: React.FC = () => {
             }}
           ></div>
 
-          {/* Floating Hospital Cards */}
           <div className="relative w-full h-full" style={{ height: "900px" }}>
-            {/* Connecting Lines SVG */}
+            {/* Connecting Lines SVG - use hospitalsToRender */}
             <svg
               className="absolute inset-0 w-full h-full pointer-events-none"
               style={{ zIndex: 30 }}
@@ -999,30 +1318,24 @@ const Hospitals: React.FC = () => {
                   <polygon points="0 0, 10 3.5, 0 7" fill="#bef264" />
                 </marker>
               </defs>
-              {hospitals.map((hospital, idx) => {
-                const angle = (idx / hospitals.length) * Math.PI * 2;
-                const maxDist = Math.max(...hospitals.map((h) => h.distance));
-                const distRatio = hospital.distance / maxDist;
-                const radius = 150 + distRatio * 250;
 
-                // Calculate start point on the circle edge using the
-                // measured sphere radius so lines attach to the visible
-                // circle even if its size changes.
+              {hospitalsToRender.map((hospital, idx) => {
+                const angle = (idx / hospitalsToRender.length) * Math.PI * 2;
+                const maxDist = Math.max(
+                  ...hospitalsToRender.map((h) => h.distance),
+                );
+                const distRatio = hospital.distance / Math.max(1, maxDist);
+                const radius = 150 + distRatio * 250;
                 const circleRadius = sphereRadius;
                 const startX = centerX + Math.cos(angle) * circleRadius;
                 const startY = centerY + Math.sin(angle) * circleRadius;
 
-                // Use the previously computed/clamped card positions to
-                // derive the actual card center so the path endpoint
-                // matches the visible card location. Also include the
-                // current drag offset so lines follow dragged cards.
                 const pos = positions[hospital.id] as React.CSSProperties;
-                const rectWidth = 320; // w-80
-                const rectHeight = 160; // compact card approx height
+                const rectWidth = 320;
+                const rectHeight = 160;
                 const halfW = rectWidth / 2;
                 const halfH = rectHeight / 2;
 
-                // Parse left/top (they are stored as px strings)
                 let posLeft =
                   pos && typeof pos.left === "string"
                     ? parseFloat(pos.left)
@@ -1032,7 +1345,6 @@ const Hospitals: React.FC = () => {
                     ? parseFloat(pos.top)
                     : centerY - Math.sin(angle) * radius - halfH;
 
-                // Apply drag offset to card position
                 const offset = offsets[hospital.id] || { x: 0, y: 0 };
                 posLeft += offset.x;
                 posTop += offset.y;
@@ -1040,18 +1352,15 @@ const Hospitals: React.FC = () => {
                 const cardX = posLeft + halfW;
                 const cardY = posTop + halfH;
 
-                // Vector from card center to the start (sphere edge)
                 const vx = startX - cardX;
                 const vy = startY - cardY;
 
-                // If vector is tiny (start overlaps center), fall back to card center
                 let endX: number;
                 let endY: number;
                 if (Math.abs(vx) < 1e-6 && Math.abs(vy) < 1e-6) {
                   endX = cardX;
                   endY = cardY;
                 } else {
-                  // scale factor to hit rectangle boundary
                   let s: number;
                   if (Math.abs(vx) < 1e-6) {
                     s = halfH / Math.abs(vy);
@@ -1060,17 +1369,13 @@ const Hospitals: React.FC = () => {
                   } else {
                     s = Math.min(halfW / Math.abs(vx), halfH / Math.abs(vy));
                   }
-
-                  // end point is card center plus scaled vector towards start
                   endX = cardX + vx * s;
                   endY = cardY + vy * s;
                 }
 
-                // Calculate midpoint for quadratic curve
                 const midX = (startX + endX) / 2;
                 const midY = (startY + endY) / 2;
 
-                // Perpendicular offset for curve
                 const offsetX = Math.cos(angle + Math.PI / 2) * 30;
                 const offsetY = Math.sin(angle + Math.PI / 2) * 30;
                 const controlX = midX + offsetX;
@@ -1092,7 +1397,7 @@ const Hospitals: React.FC = () => {
               })}
             </svg>
 
-            {/* Center User Circle */}
+            {/* Center user circle */}
             <div
               ref={sphereRef}
               className="absolute w-32 h-32 bg-black rounded-full flex items-center justify-center user-center border-4 border-lime-400 z-50 shadow-2xl"
@@ -1110,16 +1415,14 @@ const Hospitals: React.FC = () => {
                   YOU
                 </span>
               </div>
-              {/* Radar Scan Effect */}
               <div className="absolute inset-0 rounded-full border border-lime-400/30 animate-[ping_3s_linear_infinite]"></div>
               <div className="absolute -inset-5 rounded-full border border-lime-400/20 animate-[ping_3s_linear_infinite_1s]"></div>
             </div>
 
-            {/* Hospital Cards positioned around center */}
-            {hospitals.map((hospital) => {
+            {/* Hospital cards (render hospitalsToRender) */}
+            {hospitalsToRender.map((hospital) => {
               const offset = offsets[hospital.id] || { x: 0, y: 0 };
               const basePos = positions[hospital.id];
-              // Conditional rendering to prevent rendering before positions are calculated
               if (!basePos) return null;
               const baseLeft =
                 typeof basePos.left === "string" ? parseFloat(basePos.left) : 0;
@@ -1135,9 +1438,6 @@ const Hospitals: React.FC = () => {
                   }}
                   className="hospital-card-float z-10 hover:z-999 cursor-grab active:cursor-grabbing select-none"
                   onMouseDown={(e) => handleMouseDown(e, hospital.id)}
-                  onMouseMove={handleMouseMove}
-                  onMouseUp={handleMouseUp}
-                  onMouseLeave={handleMouseUp}
                 >
                   <HospitalCard
                     hospital={hospital}
@@ -1209,10 +1509,16 @@ const Hospitals: React.FC = () => {
         </div>
       </div>
 
-      {/* Hospital Details Modal */}
+      {/* Modals */}
       <HospitalDetailsModal
         hospital={detailModalHospital}
         onClose={() => setDetailModalHospital(null)}
+      />
+      <PatientProfileModal
+        open={profileOpen}
+        onClose={() => setProfileOpen(false)}
+        initialPatient={patient}
+        onSaved={handleProfileSaved}
       />
     </div>
   );

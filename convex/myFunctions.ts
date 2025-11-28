@@ -235,3 +235,41 @@ console.log(
   },
 });
 
+export const updatePatientForUser = mutation({
+  args: {
+    patch: v.object({
+      name: v.optional(v.string()),
+      contact: v.optional(v.string()),
+      location: v.optional(v.string()),
+    }),
+  },
+  handler: async (ctx, { patch }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    // Find existing patient for this user (uses patients.index("by_user"))
+    const patient = await ctx.db
+      .query("patients")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .first();
+
+    if (patient) {
+      // Patch only the provided fields
+      await ctx.db.patch(patient._id, patch);
+      return await ctx.db.get(patient._id);
+    }
+
+    // No patient found — create a new one using provided fields
+    const record: any = {
+      userId,
+      createdAt: Date.now(),
+    };
+
+    if (typeof patch.name !== "undefined") record.name = patch.name;
+    if (typeof patch.contact !== "undefined") record.contact = patch.contact;
+    if (typeof patch.location !== "undefined") record.location = patch.location;
+
+    const id = await ctx.db.insert("patients", record);
+    return await ctx.db.get(id);
+  },
+});
