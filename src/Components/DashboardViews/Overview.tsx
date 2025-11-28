@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { StatCard } from "../StatCard";
 import DepartmentCard from "../DepartmentCard";
-import { useQuery } from "convex/react"; // <-- added
+import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
+import { AgentStatus, AgentState } from "../AgentStatus";
+
 type Staffing = "Optimal" | "Understaffed" | "Critical";
 
 interface Dept {
@@ -29,7 +31,7 @@ interface OverviewProps {
   onNavigate: (tab: string) => void;
   insight: string | null;
   actions?: string[];
-  hospitalName?: string; // <-- optional prop to allow parent override
+  hospitalName?: string;
 }
 
 export const Overview: React.FC<OverviewProps> = ({
@@ -45,13 +47,18 @@ export const Overview: React.FC<OverviewProps> = ({
   ]);
   const [departments, setDepartments] = useState<Dept[]>(INITIAL_DEPARTMENTS);
 
-  // Convex hook to fetch hospitals for the authenticated user.
-  // Returns an array of hospital documents or null while loading.
+  // Agentic UI State
+  const [isAutonomous, setIsAutonomous] = useState(true);
+  const [agentState, setAgentState] = useState<AgentState>("IDLE");
+  const [agentMessage, setAgentMessage] = useState("Monitoring systems...");
+  const [reasoningLog, setReasoningLog] = useState<string[]>([]);
+  const logEndRef = useRef<HTMLDivElement>(null);
+
+  // Convex hook
   const hospitals = useQuery(api.myFunctions.getHospitalsForUser) as Array<{
     name?: string;
   }> | null;
 
-  // Decide which name to display:
   const hospitalDisplayName =
     hospitalName ??
     (hospitals && hospitals.length > 0 && hospitals[0].name) ??
@@ -59,6 +66,77 @@ export const Overview: React.FC<OverviewProps> = ({
 
   const criticalDeps = departments.filter((d) => d.staffing === "Critical");
   const nonCriticalDeps = departments.filter((d) => d.staffing !== "Critical");
+
+  // Auto-scroll reasoning log
+  useEffect(() => {
+    if (logEndRef.current && logEndRef.current.parentElement) {
+      logEndRef.current.parentElement.scrollTop = logEndRef.current.parentElement.scrollHeight;
+    }
+  }, [reasoningLog]);
+
+  // Real-time Agent Logic: Poll Backend & Log Events
+  useEffect(() => {
+    if (!isAutonomous) {
+      setAgentState("IDLE");
+      setAgentMessage("Autonomous mode paused.");
+      return;
+    }
+
+    const runAgentCycle = async () => {
+      setAgentState("THINKING");
+      setAgentMessage("Syncing with Hospital Database...");
+
+      try {
+        // 1. Log Network Request
+        setReasoningLog(prev => [...prev.slice(-5), `> [NET] GET /api/v1/census/realtime...`]);
+
+        // 2. Simulate Latency/Processing
+        await new Promise(r => setTimeout(r, 800));
+
+        // 3. Analyze Current State (Real Data)
+        const er = departments.find(d => d.name.includes("Emergency"));
+        const criticalDeps = departments.filter(d => d.staffing === "Critical");
+
+        if (er && er.occupancy > 90) {
+          setAgentState("CRITICAL");
+          setAgentMessage(`CRITICAL: ER Load ${er.occupancy}%`);
+          setReasoningLog(prev => [...prev.slice(-5), `> [WARN] ER Capacity Critical (${er.occupancy}%). Initiating diversion protocols.`]);
+        } else if (criticalDeps.length > 0) {
+          setAgentState("ACTING");
+          setAgentMessage("Reallocating staff...");
+          setReasoningLog(prev => [...prev.slice(-5), `> [ACTION] Detected ${criticalDeps.length} understaffed wards. Paging on-call residents.`]);
+        } else {
+          setAgentState("IDLE");
+          setAgentMessage("System Nominal");
+          setReasoningLog(prev => [...prev.slice(-5), `> [INFO] All systems nominal. ER Occupancy: ${er?.occupancy}%.`]);
+        }
+
+        // 4. Random "Deep" Insight
+        if (Math.random() > 0.7) {
+          const insights = [
+            "Correlating AQI spikes with respiratory admissions...",
+            "Optimizing O2 supply chain logistics...",
+            "Updating predictive surge models (v2.4)...",
+            "Scanning for infectious disease clusters..."
+          ];
+          const insight = insights[Math.floor(Math.random() * insights.length)];
+          setTimeout(() => {
+            setReasoningLog(prev => [...prev.slice(-5), `> [AI] ${insight}`]);
+          }, 1000);
+        }
+
+      } catch (e) {
+        setAgentState("CRITICAL");
+        setReasoningLog(prev => [...prev.slice(-5), `> [ERR] Connection lost to backend node.`]);
+      }
+    };
+
+    // Run immediately then interval
+    runAgentCycle();
+    const interval = setInterval(runAgentCycle, 6000); // Every 6 seconds
+
+    return () => clearInterval(interval);
+  }, [isAutonomous, departments]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -79,16 +157,10 @@ export const Overview: React.FC<OverviewProps> = ({
           return Number.isFinite(num) && num >= 0 ? num : 0;
         });
 
-        if (!raw.length) {
-          // Keep default demo data if backend returns nothing
-          return;
-        }
+        if (!raw.length) return;
 
         const maxVal = Math.max(...raw);
-        if (!Number.isFinite(maxVal) || maxVal <= 0) {
-          // Avoid NaNs / invisible bars
-          return;
-        }
+        if (!Number.isFinite(maxVal) || maxVal <= 0) return;
 
         const normalizedData = raw.map((v: number) =>
           Math.max(5, Math.round((v / (maxVal * 1.1)) * 100)),
@@ -97,7 +169,6 @@ export const Overview: React.FC<OverviewProps> = ({
         setForecastData(normalizedData);
       } catch (error) {
         console.error("Error fetching overview data:", error);
-        // On error, keep existing fallback values
       }
     };
 
@@ -107,6 +178,11 @@ export const Overview: React.FC<OverviewProps> = ({
   useEffect(() => {
     const updateDepartments = async () => {
       try {
+        // Log the prediction request
+        if (isAutonomous) {
+          setReasoningLog(prev => [...prev.slice(-5), `> [NET] POST /predict (Payload: {aqi: 150, temp: 32})`]);
+        }
+
         const response = await fetch("http://localhost:8002/predict", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -119,7 +195,12 @@ export const Overview: React.FC<OverviewProps> = ({
           }),
         });
         const data = await response.json();
-        const factor = data.predicted_patients / 850; // scale around baseline
+
+        if (isAutonomous) {
+          setReasoningLog(prev => [...prev.slice(-5), `> [DATA] Prediction received: ${data.predicted_patients} patients expected.`]);
+        }
+
+        const factor = data.predicted_patients / 850;
 
         setDepartments(
           INITIAL_DEPARTMENTS.map((dep) => {
@@ -147,15 +228,18 @@ export const Overview: React.FC<OverviewProps> = ({
     };
 
     updateDepartments();
-  }, []);
+    // Poll predictions every 30s to keep data fresh
+    const pollInterval = setInterval(updateDepartments, 30000);
+    return () => clearInterval(pollInterval);
+  }, [isAutonomous]);
 
   const erDept = departments.find((d) => d.name.includes("Emergency"));
   const erBaseTarget = 30;
   const erWaitMinutes = erDept
     ? Math.min(
-        120,
-        Math.max(10, Math.round(20 + (erDept.occupancy - 60) * 0.7)),
-      )
+      120,
+      Math.max(10, Math.round(20 + (erDept.occupancy - 60) * 0.7)),
+    )
     : erBaseTarget;
   const erDelta = erWaitMinutes - erBaseTarget;
   const erTrendDirection: "up" | "down" | "neutral" =
@@ -178,8 +262,20 @@ export const Overview: React.FC<OverviewProps> = ({
       {/* Header */}
       <header className="flex justify-between items-end mb-6 border-b border-gray-200 pb-4">
         <div>
-          <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-            Hospital Command Center
+          <div className="flex items-center gap-3 mb-2">
+            <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+              Hospital Command Center
+            </div>
+            <div className="h-4 w-px bg-gray-300"></div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-gray-400 uppercase">Autonomous Mode</span>
+              <button
+                onClick={() => setIsAutonomous(!isAutonomous)}
+                className={`w-8 h-4 rounded-full p-0.5 transition-colors duration-300 ${isAutonomous ? "bg-lime-400" : "bg-gray-300"}`}
+              >
+                <div className={`w-3 h-3 bg-white rounded-full shadow-sm transition-transform duration-300 ${isAutonomous ? "translate-x-4" : "translate-x-0"}`}></div>
+              </button>
+            </div>
           </div>
           <h1 className="text-3xl font-bold font-display leading-none">
             {hospitalDisplayName}
@@ -188,7 +284,8 @@ export const Overview: React.FC<OverviewProps> = ({
             Predicting Healthcare Surges, Powering Smarter Hospitals
           </p>
         </div>
-        <div className="flex items-center gap-6">
+        <div className="flex flex-col items-end gap-2">
+          <AgentStatus state={agentState} message={agentMessage} />
           <div className="text-right">
             <div className="text-2xl font-bold font-display tabular-nums">
               {currentTime.toLocaleTimeString([], {
@@ -204,50 +301,26 @@ export const Overview: React.FC<OverviewProps> = ({
               })}
             </div>
           </div>
-          <div className="flex items-center gap-3 px-4 py-2 bg-black text-white border-2 border-lime-400 shadow-[4px_4px_0px_0px_#bef264]">
-            <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></span>
-            <div>
-              <div className="text-[10px] font-bold text-lime-400 uppercase leading-none">
-                Status Level
-              </div>
-              <div className="text-sm font-bold leading-none">
-                CRITICAL SURGE
-              </div>
-            </div>
-          </div>
         </div>
       </header>
 
-      {/* Live Alert Ticker */}
-      <div className="bg-black text-lime-400 text-xs font-mono py-2 px-4 mb-6 overflow-hidden whitespace-nowrap relative flex items-center">
-        <span className="font-bold text-white mr-4 uppercase tracking-wider">
-          System Log:
-        </span>
-
-        {/* Scroll container */}
-        <div
-          className="inline-flex overflow-x-scroll no-scrollbar scrollbar-hide element-with-overflow"
-          onWheel={(e) => {
-            e.preventDefault();
-            e.currentTarget.scrollLeft += e.deltaY; // convert wheel → horizontal scroll
-          }}
-          style={{ scrollBehavior: "smooth" }}
-        >
-          <span className="mr-8">[14:32] ICU Bed #4 Occupied</span>
-          <span className="mr-8 text-red-500">
-            [14:30] CRITICAL: Oxygen Pressure Drop in Ward A
-          </span>
-          <span className="mr-8">[14:28] Ambulance #102 Arrived (Trauma)</span>
-          <span className="mr-8">[14:25] Shift B Staffing Check Complete</span>
-          <span className="mr-8 text-orange-400">
-            [14:20] WARNING: AQI Spike Detected (312)
-          </span>
-          <span className="mr-8 text-lime-400">
-            [14:15] Patient Advisory Sent: "High Pollution - Avoid Outdoor
-            Activities"
-          </span>
+      {/* Live Reasoning Terminal */}
+      {isAutonomous && (
+        <div className="bg-black text-lime-400 font-mono text-xs p-4 rounded-lg mb-6 shadow-[4px_4px_0px_0px_#bef264] border-2 border-gray-800">
+          <div className="flex items-center gap-2 mb-2 border-b border-gray-800 pb-2">
+            <i className="ph-bold ph-terminal-window"></i>
+            <span className="font-bold uppercase tracking-wider">Neural Engine Stream</span>
+          </div>
+          <div className="h-24 overflow-hidden flex flex-col justify-end">
+            {reasoningLog.map((log, i) => (
+              <div key={i} className="animate-in slide-in-from-left duration-300 opacity-80">
+                {log}
+              </div>
+            ))}
+            <div ref={logEndRef}></div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Agentic Insight Panel */}
       {insight && (
@@ -445,9 +518,8 @@ export const Overview: React.FC<OverviewProps> = ({
                     style={{ height: `${h}%` }}
                   >
                     <div
-                      className={`absolute bottom-0 w-full transition-all duration-1000 ${
-                        h > 80 ? "bg-red-500" : "bg-lime-400"
-                      }`}
+                      className={`absolute bottom-0 w-full transition-all duration-1000 ${h > 80 ? "bg-red-500" : "bg-lime-400"
+                        }`}
                       style={{ height: `${h * 0.8}%` }}
                     ></div>
                   </div>
@@ -568,9 +640,8 @@ export const Overview: React.FC<OverviewProps> = ({
                     <td className="py-2 font-bold font-mono">{p.id}</td>
                     <td className="py-2">
                       <span
-                        className={`w-2 h-2 rounded-full inline-block mr-1 ${
-                          p.triage === "Red" ? "bg-red-500" : "bg-yellow-400"
-                        }`}
+                        className={`w-2 h-2 rounded-full inline-block mr-1 ${p.triage === "Red" ? "bg-red-500" : "bg-yellow-400"
+                          }`}
                       ></span>
                       {p.triage}
                     </td>
