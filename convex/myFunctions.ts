@@ -1,6 +1,6 @@
 import { v } from "convex/values";
-import { query, mutation, action } from "./_generated/server";
-import { api } from "./_generated/api";
+import { query, mutation } from "./_generated/server";
+
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 // Create a minimal hospital record for the authenticated user.
@@ -87,7 +87,7 @@ export const ensureHospitalForAuthenticatedUser = mutation({
 
     return await ctx.db.get(hospitalId);
   },
-  
+
 });
 
 
@@ -213,10 +213,10 @@ export const updateHospital = mutation({
     // Debugging logs — remove in production
     console.log("updateHospital: userId:", userId?.toString?.());
     console.log("updateHospital: userId:", userId?.toString?.());
-console.log(
-  "updateHospital: existing.ownerId:",
-  existing.ownerId?.toString?.()
-);
+    console.log(
+      "updateHospital: existing.ownerId:",
+      existing.ownerId?.toString?.()
+    );
 
 
     // Allow update if ownerId matches OR user email matches hospital email

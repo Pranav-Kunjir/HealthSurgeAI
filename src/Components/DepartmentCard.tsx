@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
 interface DepartmentCardProps {
   name: string;
@@ -8,22 +8,7 @@ interface DepartmentCardProps {
   className?: string;
 }
 
-const simulateAgenticWork = (onProgress: (p: number) => void) => {
-  return new Promise<void>((resolve) => {
-    let p = 0;
-    const id = setInterval(() => {
-      p += Math.floor(Math.random() * 12) + 6;
-      if (p >= 100) {
-        p = 100;
-        onProgress(p);
-        clearInterval(id);
-        setTimeout(() => resolve(), 400);
-      } else {
-        onProgress(p);
-      }
-    }, 400);
-  });
-};
+
 
 import { useToast } from "./Toaster";
 

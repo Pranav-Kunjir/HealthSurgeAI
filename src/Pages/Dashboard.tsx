@@ -8,7 +8,7 @@ import { AlertsView } from "../Components/DashboardViews/AlertsView";
 
 import { SettingsView } from "../Components/DashboardViews/SettingsView";
 import { NotificationsView } from "../Components/DashboardViews/NotificationsView";
-import { EmergencyManager } from "../Components/DashboardViews/EmergencyManager";
+
 import { ContactsView } from "../Components/DashboardViews/ContactsView";
 
 const Dashboard: React.FC = () => {

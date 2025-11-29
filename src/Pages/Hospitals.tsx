@@ -135,9 +135,8 @@ const HospitalCard: React.FC<HospitalCardProps> = ({
   return (
     <div
       style={style}
-      className={`bg-white border-2 border-black shadow-[6px_6px_0px_0px_#111] cursor-pointer transition-all duration-300 group hover:shadow-[8px_8px_0px_0px_#bef264] hover:translate-x-1 hover:translate-y-1 hover:z-999 ${
-        isSelected ? "z-50 ring-4 ring-lime-400" : "z-10"
-      }`}
+      className={`bg-white border-2 border-black shadow-[6px_6px_0px_0px_#111] cursor-pointer transition-all duration-300 group hover:shadow-[8px_8px_0px_0px_#bef264] hover:translate-x-1 hover:translate-y-1 hover:z-999 ${isSelected ? "z-50 ring-4 ring-lime-400" : "z-10"
+        }`}
       onClick={onClick}
     >
       {/* Compact View (Default) */}
@@ -408,8 +407,7 @@ const HospitalDetailsModal: React.FC<HospitalDetailsModalProps> = ({
 
   const handleConfirmBooking = () => {
     alert(
-      `Booking confirmed!\nBed: ${selectedBedType || "N/A"}\nAmbulance: ${
-        selectedAmbulance || "Not selected"
+      `Booking confirmed!\nBed: ${selectedBedType || "N/A"}\nAmbulance: ${selectedAmbulance || "Not selected"
       }`,
     );
     onClose();
@@ -449,16 +447,14 @@ const HospitalDetailsModal: React.FC<HospitalDetailsModalProps> = ({
         {/* Progress Steps */}
         <div className="bg-gray-50 border-b-2 border-black px-6 py-4 flex items-center gap-4 shrink-0">
           <div
-            className={`flex items-center gap-2 ${
-              bookingStep === "service" ? "text-black" : "text-gray-400"
-            }`}
+            className={`flex items-center gap-2 ${bookingStep === "service" ? "text-black" : "text-gray-400"
+              }`}
           >
             <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center font-bold border-2 ${
-                bookingStep === "service"
-                  ? "bg-lime-400 border-black"
-                  : "bg-gray-200 border-gray-300"
-              }`}
+              className={`w-8 h-8 rounded-full flex items-center justify-center font-bold border-2 ${bookingStep === "service"
+                ? "bg-lime-400 border-black"
+                : "bg-gray-200 border-gray-300"
+                }`}
             >
               1
             </div>
@@ -466,16 +462,14 @@ const HospitalDetailsModal: React.FC<HospitalDetailsModalProps> = ({
           </div>
           <div className="h-0.5 w-12 bg-gray-300"></div>
           <div
-            className={`flex items-center gap-2 ${
-              bookingStep === "confirm" ? "text-black" : "text-gray-400"
-            }`}
+            className={`flex items-center gap-2 ${bookingStep === "confirm" ? "text-black" : "text-gray-400"
+              }`}
           >
             <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center font-bold border-2 ${
-                bookingStep === "confirm"
-                  ? "bg-lime-400 border-black"
-                  : "bg-gray-200 border-gray-300"
-              }`}
+              className={`w-8 h-8 rounded-full flex items-center justify-center font-bold border-2 ${bookingStep === "confirm"
+                ? "bg-lime-400 border-black"
+                : "bg-gray-200 border-gray-300"
+                }`}
             >
               2
             </div>
@@ -502,11 +496,10 @@ const HospitalDetailsModal: React.FC<HospitalDetailsModalProps> = ({
                           selectedBedType === bed.type ? null : bed.type,
                         )
                       }
-                      className={`relative p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                        selectedBedType === bed.type
-                          ? "border-black bg-lime-50 shadow-[4px_4px_0px_0px_#111]"
-                          : "border-gray-200 hover:border-black hover:bg-gray-50"
-                      }`}
+                      className={`relative p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedBedType === bed.type
+                        ? "border-black bg-lime-50 shadow-[4px_4px_0px_0px_#111]"
+                        : "border-gray-200 hover:border-black hover:bg-gray-50"
+                        }`}
                     >
                       {selectedBedType === bed.type && (
                         <div className="absolute -top-3 -right-3 bg-black text-lime-400 rounded-full p-1 border-2 border-lime-400 shadow-sm">
@@ -516,18 +509,16 @@ const HospitalDetailsModal: React.FC<HospitalDetailsModalProps> = ({
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex items-center gap-3">
                           <div
-                            className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                              selectedBedType === bed.type
-                                ? "bg-lime-200"
-                                : "bg-blue-50"
-                            }`}
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center ${selectedBedType === bed.type
+                              ? "bg-lime-200"
+                              : "bg-blue-50"
+                              }`}
                           >
                             <i
-                              className={`ph-fill ${bed.icon} text-2xl ${
-                                selectedBedType === bed.type
-                                  ? "text-black"
-                                  : "text-blue-600"
-                              }`}
+                              className={`ph-fill ${bed.icon} text-2xl ${selectedBedType === bed.type
+                                ? "text-black"
+                                : "text-blue-600"
+                                }`}
                             ></i>
                           </div>
                           <div>
@@ -578,11 +569,10 @@ const HospitalDetailsModal: React.FC<HospitalDetailsModalProps> = ({
                             : ambulance.type,
                         )
                       }
-                      className={`relative p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                        selectedAmbulance === ambulance.type
-                          ? "border-black bg-lime-50 shadow-[4px_4px_0px_0px_#111]"
-                          : "border-gray-200 hover:border-black hover:bg-gray-50"
-                      }`}
+                      className={`relative p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedAmbulance === ambulance.type
+                        ? "border-black bg-lime-50 shadow-[4px_4px_0px_0px_#111]"
+                        : "border-gray-200 hover:border-black hover:bg-gray-50"
+                        }`}
                     >
                       {selectedAmbulance === ambulance.type && (
                         <div className="absolute -top-3 -right-3 bg-black text-lime-400 rounded-full p-1 border-2 border-lime-400 shadow-sm">
@@ -591,18 +581,16 @@ const HospitalDetailsModal: React.FC<HospitalDetailsModalProps> = ({
                       )}
                       <div className="flex items-center gap-3 mb-3">
                         <div
-                          className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                            selectedAmbulance === ambulance.type
-                              ? "bg-lime-200"
-                              : "bg-red-50"
-                          }`}
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center ${selectedAmbulance === ambulance.type
+                            ? "bg-lime-200"
+                            : "bg-red-50"
+                            }`}
                         >
                           <i
-                            className={`ph-fill ${ambulance.icon} text-2xl ${
-                              selectedAmbulance === ambulance.type
-                                ? "text-black"
-                                : "text-red-600"
-                            }`}
+                            className={`ph-fill ${ambulance.icon} text-2xl ${selectedAmbulance === ambulance.type
+                              ? "text-black"
+                              : "text-red-600"
+                              }`}
                           ></i>
                         </div>
                         <div>
@@ -968,27 +956,46 @@ const Hospitals: React.FC = () => {
   // Convert DB hospitals into UI Hospital objects (fill missing fields)
   const dbHospitals = getHospitalsForUserQuery ?? [];
 
+  // Deterministic pseudo-random number generator
+  const getStableRandom = (seed: string) => {
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+      const char = seed.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash |= 0;
+    }
+    const x = Math.sin(hash) * 10000;
+    return x - Math.floor(x);
+  };
+
   const mapDbToHospital = (db: any, idx: number): Hospital => {
     const id = db._id ?? db.email ?? `db-${idx}`;
     const name = db.name ?? db.hospitalName ?? "Unnamed Hospital";
     const address = db.location ?? "Unknown";
 
+    // Use ID + field name as seed for stable values
+    const rDist = getStableRandom(id + "dist");
+    const rBeds = getStableRandom(id + "beds");
+    const rOcc = getStableRandom(id + "occ");
+    const rRate = getStableRandom(id + "rate");
+    const rWait = getStableRandom(id + "wait");
+
     const distance =
       typeof db.distance === "number"
         ? db.distance
-        : Number((Math.random() * 4 + 0.5).toFixed(1));
+        : Number((rDist * 4 + 0.5).toFixed(1));
     const beds =
       typeof db.beds === "number"
         ? db.beds
-        : Math.floor(Math.random() * 300) + 150;
+        : Math.floor(rBeds * 300) + 150;
     const occupancy =
       typeof db.occupancy === "number"
         ? db.occupancy
-        : Math.floor(Math.random() * 40) + 50; // 50-90
+        : Math.floor(rOcc * 40) + 50; // 50-90
     const rating =
       typeof db.rating === "number"
         ? db.rating
-        : Number((Math.random() * 0.9 + 4.0).toFixed(1));
+        : Number((rRate * 0.9 + 4.0).toFixed(1));
     const specializations =
       Array.isArray(db.specializations) && db.specializations.length > 0
         ? db.specializations
@@ -999,7 +1006,7 @@ const Hospitals: React.FC = () => {
     const waitTime =
       typeof db.waitTime === "number"
         ? db.waitTime
-        : Math.floor(Math.random() * 30) + 10;
+        : Math.floor(rWait * 30) + 10;
 
     return {
       id: String(id),
@@ -1436,7 +1443,7 @@ const Hospitals: React.FC = () => {
                     left: `${baseLeft + offset.x}px`,
                     top: `${baseTop + offset.y}px`,
                   }}
-                  className="hospital-card-float z-10 hover:z-999 cursor-grab active:cursor-grabbing select-none"
+                  className="z-10 hover:z-999 cursor-grab active:cursor-grabbing select-none"
                   onMouseDown={(e) => handleMouseDown(e, hospital.id)}
                 >
                   <HospitalCard
