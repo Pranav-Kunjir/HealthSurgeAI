@@ -172,6 +172,12 @@ class EmergencyActionRequest(BaseModel):
 
 @app.post("/execute_emergency")
 def execute_emergency(request: EmergencyActionRequest):
+    if not TWILIO_ACCOUNT_SID or not TWILIO_AUTH_TOKEN:
+        return {
+            "status": "error", 
+            "message": "Twilio credentials (SID/Token) are missing on server."
+        }
+
     try:
         client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
         
@@ -201,45 +207,53 @@ def execute_emergency(request: EmergencyActionRequest):
                 sent_count += 1
 
                 # Initiate Voice Call
-                print(f"Attempting to call {contact['phone']}...")
-                
-                # TwiML for the call
-                response = VoiceResponse()
-                response.say(message_body, voice='alice')
-                
-                # Use Twimlets echo for TwiML URL (or mock if no credentials)
-                import urllib.parse
-                twiml_url = f"http://twimlets.com/echo?Twiml=%3CResponse%3E%3CSay%3E{urllib.parse.quote(message_body)}%3C%2FSay%3E%3C%2FResponse%3E"
+                # Only attempt call if SMS succeeded (implies valid number/creds)
+                try:
+                    print(f"Attempting to call {contact['phone']}...")
+                    
+                    # TwiML for the call
+                    response = VoiceResponse()
+                    response.say(message_body, voice='alice')
+                    
+                    import urllib.parse
+                    twiml_url = f"http://twimlets.com/echo?Twiml=%3CResponse%3E%3CSay%3E{urllib.parse.quote(message_body)}%3C%2FSay%3E%3C%2FResponse%3E"
 
-                # Determine 'From' number for call
-                from_number = TWILIO_PHONE_NUMBER
-                if not from_number:
-                     # Attempt to use Messaging Service SID is NOT valid for calls usually, 
-                     # but we need a valid caller ID. 
-                     # If TWILIO_PHONE_NUMBER is missing, we can't make a call.
-                     print("Error: TWILIO_PHONE_NUMBER is not set. Cannot initiate voice call.")
-                     continue
-
-                call = client.calls.create(
-                    to=contact['phone'],
-                    from_=from_number,
-                    url=twiml_url
-                )
-                print(f"Call initiated! SID: {call.sid}")
+                    from_number = TWILIO_PHONE_NUMBER
+                    if from_number:
+                        call = client.calls.create(
+                            to=contact['phone'],
+                            from_=from_number,
+                            url=twiml_url
+                        )
+                        print(f"Call initiated! SID: {call.sid}")
+                except Exception as call_err:
+                    print(f"Voice call failed for {contact['name']}: {call_err}")
+                    # Don't fail the whole request just for voice call failure
 
             except Exception as e:
-                errors.append(f"{contact['name']}: {str(e)}")
+                error_msg = f"{contact['name']}: {str(e)}"
+                errors.append(error_msg)
                 print(f"Failed to contact {contact['name']} ({contact['phone']}): {e}")
 
-        return {
-            "status": "success" if sent_count > 0 else "partial_failure",
-            "sent_count": sent_count,
-            "errors": errors,
-            "message": "Emergency protocols executed. SMS alerts sent."
-        }
+        if sent_count > 0:
+            return {
+                "status": "success",
+                "sent_count": sent_count,
+                "errors": errors,
+                "message": f"Emergency protocols executed. Sent {sent_count} alerts."
+            }
+        else:
+            # If no SMS sent, return error with details
+            return {
+                "status": "error",
+                "sent_count": 0,
+                "errors": errors,
+                "message": f"Failed to send alerts. Errors: {'; '.join(errors)}"
+            }
+
     except Exception as e:
         print(f"Twilio Error: {e}")
-        return {"status": "error", "message": str(e)}
+        return {"status": "error", "message": f"System Error: {str(e)}"}
 
 class CallRequest(BaseModel):
     phone: str
