@@ -47,8 +47,7 @@ app.add_middleware(
 # __file__ is .../api/index.py
 # project_root is .../
 current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.dirname(current_dir)
-csv_path = os.path.join(project_root, 'public', 'hospital_daily_1996_2024_indian_holidays.csv')
+csv_path = os.path.join(current_dir, 'hospital_daily_1996_2024_indian_holidays.csv')
 
 try:
     df = pd.read_csv(csv_path)
