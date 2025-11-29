@@ -27,7 +27,7 @@ emergency_contacts = [
     {"id": 1, "name": "Pranav (Verified)", "role": "Admin", "phone": "+919096341409"},
 ]
 
-app = FastAPI()
+app = FastAPI(root_path="/api")
 
 # Enable CORS
 app.add_middleware(
