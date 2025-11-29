@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { API_BASE_URL } from "../config";
 
 interface DepartmentCardProps {
   name: string;
@@ -44,7 +45,7 @@ export default function DepartmentCard({
         "Delay non-urgent admissions and reroute ambulances if needed."
       ];
 
-      const res = await fetch("http://localhost:8002/execute_emergency", {
+      const res = await fetch(`${API_BASE_URL}/execute_emergency`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ actions: actions })

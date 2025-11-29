@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { API_BASE_URL } from "../../config";
 import { StatCard } from "../StatCard";
 import DepartmentCard from "../DepartmentCard";
 import { useQuery } from "convex/react";
@@ -161,7 +162,7 @@ export const Overview: React.FC<OverviewProps> = ({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("http://localhost:8002/historical");
+        const response = await fetch(`${API_BASE_URL}/historical`);
         const data = await response.json();
 
         const raw = data.slice(-7).map((d: any) => {
@@ -198,7 +199,7 @@ export const Overview: React.FC<OverviewProps> = ({
           setReasoningLog(prev => [...prev.slice(-5), `> [NET] POST /predict (Payload: {aqi: ${weather.aqi}, temp: ${weather.temp}})`]);
         }
 
-        const response = await fetch("http://localhost:8002/predict", {
+        const response = await fetch(`${API_BASE_URL}/predict`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -400,7 +401,7 @@ export const Overview: React.FC<OverviewProps> = ({
                       onClick={async () => {
                         try {
                           const res = await fetch(
-                            "http://localhost:8002/execute_emergency",
+                            `${API_BASE_URL}/execute_emergency`,
                             {
                               method: "POST",
                               headers: { "Content-Type": "application/json" },

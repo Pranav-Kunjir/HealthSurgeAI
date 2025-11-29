@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../../config";
 
 interface ContactManagerProps {
     onClose: () => void;
@@ -15,7 +16,7 @@ export const EmergencyManager: React.FC<ContactManagerProps> = ({ onClose }) => 
 
     const fetchContacts = async () => {
         try {
-            const res = await fetch("http://localhost:8002/contacts");
+            const res = await fetch(`${API_BASE_URL}/contacts`);
             const data = await res.json();
             setContacts(data);
         } catch (e) {
@@ -26,7 +27,7 @@ export const EmergencyManager: React.FC<ContactManagerProps> = ({ onClose }) => 
     const addContact = async () => {
         if (!newNumber) return;
         try {
-            await fetch("http://localhost:8002/contacts/add", {
+            await fetch(`${API_BASE_URL}/contacts/add`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ type: activeType, number: newNumber })

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { API_BASE_URL } from "../config";
 import "../index.css";
 // --- Components ---
 
@@ -106,7 +107,7 @@ const StatsStrip: React.FC = () => {
     const fetchStats = async () => {
       try {
         // Just pinging the API to ensure it's up, then setting "Live" stats
-        await fetch('http://localhost:8002/');
+        await fetch(`${API_BASE_URL}/`);
         setStats({
           accuracy: "92.4%", // Mock "Live" updated accuracy
           stockouts: "-35%",

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../../config";
 import { useToast } from "../Toaster";
 
 interface Contact {
@@ -22,7 +23,7 @@ export const ContactsView: React.FC = () => {
 
     const fetchContacts = async () => {
         try {
-            const res = await fetch("http://localhost:8002/contacts");
+            const res = await fetch(`${API_BASE_URL}/contacts`);
             const data = await res.json();
             setContacts(data);
         } catch (e) {
@@ -38,7 +39,7 @@ export const ContactsView: React.FC = () => {
         }
         setIsLoading(true);
         try {
-            await fetch("http://localhost:8002/contacts/add", {
+            await fetch(`${API_BASE_URL}/contacts/add`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name: newName, role: newRole, phone: newPhone })
@@ -58,7 +59,7 @@ export const ContactsView: React.FC = () => {
     const deleteContact = async (id: number) => {
         if (!confirm("Are you sure you want to delete this contact?")) return;
         try {
-            await fetch(`http://localhost:8002/contacts/delete/${id}`, {
+            await fetch(`${API_BASE_URL}/contacts/delete/${id}`, {
                 method: "POST"
             });
             toast("Contact deleted", "success");
@@ -75,7 +76,7 @@ export const ContactsView: React.FC = () => {
 
         try {
             toast("Initiating call...", "info");
-            const res = await fetch("http://localhost:8002/call_staff", {
+            const res = await fetch(`${API_BASE_URL}/call_staff`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ phone: contact.phone, message })

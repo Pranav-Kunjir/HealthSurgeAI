@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { API_BASE_URL } from "../../config";
 
 type NotificationType = "Order" | "Admission" | "Transport" | "General";
 
@@ -75,7 +76,7 @@ export const NotificationsView: React.FC = () => {
     React.useEffect(() => {
         const injectAiNotification = async () => {
             try {
-                const response = await fetch("http://localhost:8002/predict", {
+                const response = await fetch(`${API_BASE_URL}/predict`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
@@ -208,8 +209,8 @@ export const NotificationsView: React.FC = () => {
                             key={filter}
                             onClick={() => setActiveFilter(filter)}
                             className={`px-6 py-3 font-bold text-sm border-r border-gray-200 transition-colors whitespace-nowrap ${activeFilter === filter
-                                    ? "bg-white text-black"
-                                    : "text-gray-500 hover:bg-gray-100"
+                                ? "bg-white text-black"
+                                : "text-gray-500 hover:bg-gray-100"
                                 }`}
                         >
                             {filter}

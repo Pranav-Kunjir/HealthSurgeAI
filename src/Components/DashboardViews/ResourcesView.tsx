@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { API_BASE_URL } from "../../config";
 import { useToast } from "../Toaster";
 
 // Types
@@ -47,7 +48,7 @@ export const ResourcesView: React.FC = () => {
   React.useEffect(() => {
     const updateInventoryBasedOnPrediction = async () => {
       try {
-        const response = await fetch('http://localhost:8002/predict', {
+        const response = await fetch(`${API_BASE_URL}/predict`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -116,7 +117,7 @@ export const ResourcesView: React.FC = () => {
     if (!item.recommendedRestock) return;
 
     try {
-      const response = await fetch('http://localhost:8002/send_restock_email', {
+      const response = await fetch(`${API_BASE_URL}/send_restock_email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
