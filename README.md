@@ -1,45 +1,74 @@
-# Welcome to your Convex + React (Vite) + Convex Auth app
+# HealthSurgeAI
 
-This is a [Convex](https://convex.dev/) project created with [`npm create convex`](https://www.npmjs.com/package/create-convex).
+**Predicting Healthcare Surges. Saving Lives.**
 
-After the initial setup (<2 minutes) you'll have a working full-stack app using:
+HealthSurgeAI is an agentic AI system designed for Indian hospitals to forecast patient influx during festivals, pollution spikes, and epidemics. It provides a dashboard for administrators to view predicted loads vs. current capacity and recommends actionable steps like staffing adjustments and resource allocation.
 
-- Convex as your backend (database, server logic)
-- [React](https://react.dev/) as your frontend (web page interactivity)
-- [Vite](https://vitest.dev/) for optimized web hosting
-- [Tailwind](https://tailwindcss.com/) for building great looking UI
-- [Convex Auth](https://labs.convex.dev/auth) for authentication
+## Project Structure
 
-## Get started
+- **Frontend**: React (Vite) + Tailwind CSS
+- **Backend (API)**: Python (FastAPI/Uvicorn)
+- **Database & Auth**: Convex
 
-If you just cloned this codebase and didn't use `npm create convex`, run:
+## Getting Started
 
-```
-npm install
-npm run dev
-```
+### Prerequisites
 
-If you're reading this README on GitHub and want to use this template, run:
+- Node.js & npm
+- Python 3.8+
+- Convex Account (for backend/auth)
 
-```
-npm create convex@latest -- -t react-vite-convexauth
-```
+### 1. Frontend & Convex Setup
 
-For more information on how to configure Convex Auth, check out the [Convex Auth docs](https://labs.convex.dev/auth/).
+The frontend is built with React and Vite, and uses Convex for real-time data and authentication.
 
-For more examples of different Convex Auth flows, check out this [example repo](https://www.convex.dev/templates/convex-auth).
+1.  **Install Dependencies**:
+    ```bash
+    npm install
+    ```
 
-## Learn more
+2.  **Run Development Server**:
+    This command runs both the Vite frontend and Convex backend in parallel.
+    ```bash
+    npm run dev
+    ```
+    - Frontend: `http://localhost:5173`
+    - Convex Dashboard: Automatically opens or runs in background.
 
-To learn more about developing your project with Convex, check out:
+### 2. Python Backend Setup
 
-- The [Tour of Convex](https://docs.convex.dev/get-started) for a thorough introduction to Convex principles.
-- The rest of [Convex docs](https://docs.convex.dev/) to learn about all Convex features.
-- [Stack](https://stack.convex.dev/) for in-depth articles on advanced topics.
+The Python backend handles the predictive engine and external API integrations.
 
-## Join the community
+1.  **Navigate to Backend Directory**:
+    ```bash
+    cd backend
+    ```
 
-Join thousands of developers building full-stack apps with Convex:
+2.  **Install Python Dependencies**:
+    (Ensure you have a virtual environment active if preferred)
+    ```bash
+    pip install fastapi uvicorn pandas numpy tensorflow scikit-learn
+    # Add other dependencies as needed based on imports in main.py
+    ```
 
-- Join the [Convex Discord community](https://convex.dev/community) to get help in real-time.
-- Follow [Convex on GitHub](https://github.com/get-convex/), star and contribute to the open-source implementation of Convex.
+3.  **Run the Python Server**:
+    ```bash
+    uvicorn main:app --reload --port 8002
+    ```
+    - API URL: `http://localhost:8002`
+
+## Key Commands
+
+| Component | Command | Description |
+| :--- | :--- | :--- |
+| **Full Stack** | `npm run dev` | Runs React Frontend + Convex Backend |
+| **Frontend Only** | `npm run dev:frontend` | Runs only the Vite dev server |
+| **Convex Only** | `npm run dev:backend` | Runs only the Convex dev server |
+| **Python API** | `uvicorn main:app --reload --port 8002` | Runs the Python FastAPI server |
+
+## Features
+
+- **Surge Prediction**: Forecasts patient influx using LSTM models.
+- **Resource Optimization**: Recommends staffing and bed allocation.
+- **Proactive Alerts**: SMS & Email notifications for staff.
+- **Real-time Dashboard**: Live view of hospital capacity and predicted surges.
