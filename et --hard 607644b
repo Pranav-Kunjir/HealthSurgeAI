@@ -1,0 +1,22 @@
+[33m961a3b8[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m fix prod 3
+[33mf611d8a[m fix prod 2
+[33mfae1bba[m fix prod 1
+[33meabfabc[m fix prod
+[33m607644b[m update readme
+[33me637d71[m remove mobile no.
+[33mef93b15[m sms fixing
+[33m7b50f75[m final working
+[33mb5ac80a[m working 3
+[33m6d1a9da[m working 2
+[33md0f5794[m working
+[33mcd8e3a7[m flask working
+[33maf46fb7[m feat: Add Emergency Manager, mock API responses, update email sending, and improve README.
+[33m9fe269e[m feat: Add deployment guide and backend deploy script, remove unused code and imports.
+[33m582a8f9[m LSTM model
+[33md0abdf0[m fixed aa bit
+[33m9136e8d[m feat: introduce agentic UI with autonomous mode toggle, dynamic status, and reasoning log, replacing static alert ticker
+[33m2383a2e[m feat: Implement dynamic inventory restock recommendations with email notification system.
+[33mb4ae915[m feat: Add Twilio voice call functionality via a new API endpoint and a UI button, and integrate calls into the alert system.
+[33m5f8f696[m added the hospital setting page
+[33m1a33b6a[m intial commit created the frontend - implemented basic ai agents
+[33m929ce85[m Initial commit
