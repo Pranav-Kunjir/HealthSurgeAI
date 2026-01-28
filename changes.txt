@@ -1,0 +1,21 @@
+fastapi
+uvicorn
+pandas
+numpy
+twilio
+python-dotenv
+pydantic
+
+
+{
+    "rewrites": [
+        {
+            "source": "/api/(.*)",
+            "destination": "/api/index.py"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "/index.html"
+        }
+    ]
+}
