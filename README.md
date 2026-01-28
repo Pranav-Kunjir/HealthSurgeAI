@@ -2,7 +2,9 @@
 
 **Predicting Healthcare Surges. Saving Lives.**
 
-HealthSurgeAI is an agentic AI system designed for Indian hospitals to forecast patient influx during festivals, pollution spikes, and epidemics. It provides a dashboard for administrators to view predicted loads vs. current capacity and recommends actionable steps like staffing adjustments and resource allocation.
+🚀 **[Live Demo](https://health-surge-ai.vercel.app/)**
+
+HealthSurgeAI is a full-stack project that forecasts hospital patient surges during festivals, pollution events, or heatwaves. It provides a dashboard for administrators to view predicted loads vs. current capacity and recommends actionable steps like staffing adjustments and resource allocation.
 
 ## Project Structure
 
