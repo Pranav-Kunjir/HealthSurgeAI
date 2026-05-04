@@ -3,13 +3,13 @@ name = "healthsurgeai"
 version = "0.1.0"
 description = "HealthSurgeAI Python backend dependencies for Vercel deployment."
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.100.0",
     "uvicorn>=0.22.0",
     "pydantic>=1.10.0",
     "pandas>=2.0.0",
-    "numpy>=1.25.0",
+    "numpy>=1.25.2,<1.27.0",
     "python-dotenv>=1.0.0",
     "twilio>=8.0.0"
 ]
