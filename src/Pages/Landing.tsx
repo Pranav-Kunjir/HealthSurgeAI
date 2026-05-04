@@ -558,9 +558,6 @@ const HealthSurgeApp: React.FC<HealthSurgeAppProps> = ({
           <div className="absolute top-0 right-0 w-64 h-64 bg-lime-400 opacity-10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
 
           <div className="inline-flex items-center gap-2 mb-6">
-            <span className="bg-lime-400 px-3 py-1 text-xs font-bold border border-black uppercase tracking-wider">
-              MumbaiHacks 2025
-            </span>
             <span className="text-sm font-medium text-gray-600">
               Healthtech Track
             </span>
@@ -715,9 +712,7 @@ const HealthSurgeApp: React.FC<HealthSurgeAppProps> = ({
             <div className="text-2xl font-bold font-display mb-2">
               HealthSurgeAI
             </div>
-            <div className="text-sm text-gray-500">
-              MumbaiHacks 2025 • Healthtech Track
-            </div>
+
           </div>
           <div className="flex gap-6 text-sm font-bold text-gray-400">
             <a href="#" className="hover:text-white">
