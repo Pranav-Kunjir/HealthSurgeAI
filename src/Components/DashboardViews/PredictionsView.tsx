@@ -8,8 +8,14 @@ export const PredictionsView: React.FC = () => {
   const [population, setPopulation] = useState(100); // % of normal
   const [trendData, setTrendData] = useState<{ day: number; value: number }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [simulationResult, setSimulationResult] = useState<{ patients: number; beds: number } | null>(null);
   const [toast, setToast] = useState<{ title: string; message: string } | null>(null);
+
+  const fallbackTrendData = Array.from({ length: 30 }, (_, i) => ({
+    day: i + 1,
+    value: 870 + Math.round(Math.sin(i / 5) * 35),
+  }));
 
   // Derived simulation value (visual only)
   const simulatedSurge = Math.round(
@@ -28,11 +34,20 @@ export const PredictionsView: React.FC = () => {
           day: i + 1,
           value: d.Patients
         }));
-        setTrendData(chartData);
+
+        if (chartData.length === 0) {
+          setError("Could not load historic patient data. Please ensure the Python backend is running on http://localhost:8002.");
+          setTrendData(fallbackTrendData);
+        } else {
+          setTrendData(chartData);
+        }
+
         setLoading(false);
 
       } catch (error) {
         console.error("Error fetching data:", error);
+        setError("Unable to load prediction history. Start the backend and refresh the page.");
+        setTrendData(fallbackTrendData);
         setLoading(false);
       }
     };
@@ -105,7 +120,7 @@ export const PredictionsView: React.FC = () => {
     const values = trendData.map(d => d.value);
     const min = Math.min(...values) * 0.9; // Buffer
     const max = Math.max(...values) * 1.1; // Buffer
-    const range = max - min;
+    const range = max - min || 1;
 
     return trendData.map((d, i) => {
       const x = (i / (trendData.length - 1)) * 100;
@@ -133,6 +148,11 @@ export const PredictionsView: React.FC = () => {
           <p className="text-gray-500">
             AI-driven forecast for the next 30 days.
           </p>
+          {error && (
+            <div className="mt-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {error}
+            </div>
+          )}
         </div>
         <div className="flex gap-2">
           <button className="px-4 py-2 bg-white border border-gray-300 rounded text-sm font-bold hover:bg-gray-50">
